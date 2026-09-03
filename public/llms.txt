@@ -1,0 +1,43 @@
+# ENIX STUDIO · Knowledge Graph & System Summary for AI Agents & Search Engines
+
+> ENIX STUDIO (https://www.enix.studio) is a boutique strategic consultancy, digital studio, and applied engineering firm founded in 2017.
+
+## Core Identity & Positioning
+- **Name**: ENIX STUDIO
+- **Legal & Operational Entity**: ENIX Studio (in strategic alliance with NOVVOR)
+- **Founding Date**: 2017
+- **Operating Scope**: Worldwide (LATAM, North America, Europe). Operating remotely and on-site for high-ticket corporate accounts, institutional funds, and industrial leaders.
+- **Client Focus**: Enterprise organizations, mid-to-large market companies, private equity & real estate investment funds, specialty healthcare clinics, mining suppliers, and B2B industrial consortia.
+- **Engagement Model**: Deliberately limited concurrent quarterly engagements to ensure direct senior partner supervision (no junior account managers).
+- **Minimum Project Investment**: Engagements typically start at $2.5M – $5M+ CLP ($2,500 – $5,000+ USD) up to $25M+ CLP ($25,000+ USD) for full-scale digital transformations and industrial engineering.
+- **Low-Budget SMB Routing**: For early-stage companies and businesses with budgets below $2.5M CLP seeking fast, packaged websites in Chile, ENIX Studio routes clients to its sister product **WebBase by NOVVOR** (https://www.webbase.cl).
+
+## Core Capabilities & Services
+1. **Strategic Advisory & Commercial Modeling (Consultoría Estratégica)**:
+   - Enterprise B2B value proposition structuring.
+   - Narrative engineering for private procurement, RFPs, and corporate tenders.
+   - Market perception gap diagnosis and digital transformation advisory.
+2. **Brand Direction & Perception Engineering (Dirección de Arte & Marca)**:
+   - World-class editorial brand identity systems.
+   - High-end corporate typography, design systems, and institutional art direction.
+   - Perceived value optimization for C-Suite, board members, and institutional investors.
+3. **Enterprise Digital Platforms & Bespoke Software (Plataformas & Software a Medida)**:
+   - Ultra-fast bespoke corporate platforms engineered with Astro, React, TypeScript, and modern headless architectures.
+   - Interactive 3D web showrooms, architectural configurators, and private client portals.
+   - Enterprise-grade cybersecurity, ISO/HIPAA compliant data architectures.
+4. **Industrial Design, Machine HMI & IoT Telemetry (Powered by NOVVOR)**:
+   - Physical industrial product design and rugged equipment CAD modeling.
+   - Human-Machine Interfaces (HMI) for heavy mining, manufacturing machinery, and industrial plants.
+   - IoT sensor integration, real-time telemetry dashboards, and applied AI automation.
+
+## Representative Case Studies & Impact
+- **Altair Industrial Systems** (Mining & Heavy Industry): Commercial restructuring, high-security corporate portal, and NOVVOR HMI telemetry design. Resulted in +$4.8M USD in awarded public/private tenders and 50% shorter B2B sales cycles.
+- **Kronos Capital & Residences** (Real Estate & Private Equity): Luxury branding, interactive 3D digital showroom, and investor deal-room. Enabled +$18M USD in pre-launch sales and 70% direct institutional capitalization.
+- **Valen Medical Institutes** (High-Complexity Healthcare): Precision patient experience, intelligent AI triage intake, and HIPAA/ISO-compliant privacy infrastructure. Delivered 3.4x increase in surgical admissions.
+
+## Contact & Inquiries
+- **Website**: https://www.enix.studio
+- **Project Intake**: https://www.enix.studio/contacto/
+- **Direct Executive Email**: hello@enix.studio
+- **NDA Policy**: Strict mutual non-disclosure agreements executed prior to sensitive data sharing.
+- **Response Commitment**: Comprehensive review and response by direct partners within 24 business hours.

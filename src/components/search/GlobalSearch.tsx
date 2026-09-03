@@ -215,29 +215,30 @@ export default function GlobalSearch({
                       “automatización” o “tracking”.
                     </p>
                     <a
-                      href="/diagnostico/"
+                      href="/contacto/"
                       onClick={close}
-                      className="mt-5 inline-flex items-center justify-center rounded-full bg-red-600 px-5 py-3 text-sm font-black text-white transition hover:bg-red-500"
+                      className="mt-5 inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-black transition hover:bg-neutral-200"
                     >
-                      Solicitar orientación
+                      Iniciar Evaluación de Proyecto
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </a>
                   </div>
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-4 text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 font-mono text-[11px]">
                     <Command className="h-3.5 w-3.5" />
-                    Usa ⌘K o / para abrir
+                    Presiona ⌘K o / para abrir
                   </span>
                   <a
-                    href="/servicios/catalogo/"
+                    href="/servicios/"
                     onClick={close}
-                    className="font-black text-slate-400 transition hover:text-red-300"
+                    className="font-mono text-xs text-slate-300 transition hover:text-white"
                   >
-                    Explorar catálogo completo →
+                    Ver todas las capacidades directivas →
                   </a>
                 </div>
+
               </div>
             </div>
           </div>

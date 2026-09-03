@@ -17,11 +17,28 @@ export default defineConfig({
         !page.includes("/api/") &&
         !page.includes("/404") &&
         !page.includes("/politicas/") &&
+        !page.includes("/diagnostico") &&
         !page.includes("/demo") &&
         !page.includes("/draft") &&
         !page.includes("/prueba"),
     }),
   ],
+  redirects: {
+    "/our-services": {
+      status: 301,
+      destination: "/#capabilities",
+    },
+    "/diagnostico": {
+      status: 301,
+      destination: "/#contact",
+    },
+    "/servicios/catalogo": {
+      status: 301,
+      destination: "/#capabilities",
+    },
+  },
+
+
   output: "server",
   adapter: vercel(),
   compressHTML: true,

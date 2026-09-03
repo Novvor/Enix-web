@@ -1,4 +1,27 @@
 User-agent: *
 Allow: /
 
+# AI Crawlers & LLM Indexing (ChatGPT, SearchGPT, Claude, Perplexity, Google Gemini)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Canonical Sitemap & LLM summary
 Sitemap: https://www.enix.studio/sitemap-index.xml

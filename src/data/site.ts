@@ -1,12 +1,44 @@
 export const site = {
   name: "ENIX STUDIO",
-  relation: "Agencia digital de NOVVOR",
+  relation: "A NOVVOR Company",
   url: "https://www.enix.studio",
   email: "hello@enix.studio",
   linkedin: "https://www.linkedin.com/company/enixstudio/",
   description:
-    "Partner de crecimiento digital, automatización e IA para empresas que quieren captar oportunidades, convertir mejor, medir con datos y escalar sistemas comerciales.",
+    "Estudio digital independiente. Diseñamos estrategia, identidad y plataformas digitales para marcas que quieren liderar su categoría. Creative by ENIX. Engineered with NOVVOR.",
 };
+
+export const boutiqueCapabilities = [
+  {
+    number: "01",
+    name: "Brand",
+    title: "Brand Strategy & Visual Direction",
+    description: "Definimos cómo será percibida tu marca. Desde el posicionamiento estratégico y la narrativa hasta el sistema de identidad visual y dirección de arte.",
+    items: ["Estrategia & Posicionamiento", "Identidad Visual", "Dirección de Arte", "Sistemas de Contenido"],
+  },
+  {
+    number: "02",
+    name: "Digital",
+    title: "Websites & Digital Products",
+    description: "Construimos plataformas digitales hechas a medida. Arquitectura limpia, diseño interactivo de vanguardia y rendimiento técnico impecable.",
+    items: ["Sitios Web Corporativos", "Comercio Digital Selecto", "Productos Digitales", "Experiencias UX / UI"],
+  },
+  {
+    number: "03",
+    name: "Growth",
+    title: "Performance & Visibility Systems",
+    description: "Sistemas de tracción diseñados para captar demanda de alto valor, posicionar autoridad en búsqueda y medir resultados sin métricas vanidosas.",
+    items: ["Posicionamiento SEO de Autoridad", "Adquisición & Paid Media", "Modelado de Analítica Digital", "Optimización Continua"],
+  },
+  {
+    number: "04",
+    name: "Intelligence",
+    title: "Automation & Applied AI",
+    description: "Automatización de flujos críticos y aplicaciones de inteligencia artificial conectadas con el músculo tecnológico e ingeniería de NOVVOR.",
+    items: ["Automatización Comercial & CRM", "Flujos Inteligentes de Datos", "Agentes & Asistentes de IA", "Integración con Infraestructura NOVVOR"],
+  },
+];
+
 
 export const services = [
   ["Estrategia y Growth", "Roadmap digital conectado a objetivos comerciales", "Diagnóstico, oferta, posicionamiento, canales y arquitectura de funnel."],

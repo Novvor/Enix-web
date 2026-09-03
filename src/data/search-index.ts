@@ -1,26 +1,22 @@
 import type { ElementType } from "react";
 import {
-  BarChart3,
-  Bot,
-  BriefcaseBusiness,
-  Brush,
+  Compass,
+  Palette,
+  Laptop,
+  Cpu,
   FileText,
-  Globe2,
-  MapPin,
-  Megaphone,
-  Search,
-  ShieldCheck,
-  Sparkles,
+  Briefcase,
+  Users,
+  Send,
+  BookOpen,
 } from "lucide-react";
 import { blogArticles } from "@/data/blogData";
 
 export type SearchItemType =
-  | "Servicio"
-  | "Artículo"
-  | "Página"
+  | "Capacidad"
   | "Caso"
-  | "Industria"
-  | "Mercado";
+  | "Página"
+  | "Perspectiva";
 
 export type SearchItem = {
   id: string;
@@ -34,267 +30,156 @@ export type SearchItem = {
   icon?: ElementType;
 };
 
-const serviceItems: SearchItem[] = [
+const capabilityItems: SearchItem[] = [
   {
-    id: "servicio-web",
-    title: "Desarrollo Web",
+    id: "cap-consultoria",
+    title: "Consultoría Estratégica & Modelo Comercial",
     description:
-      "Sitios web, landing pages, ecommerce y plataformas digitales diseñadas para convertir visitas en oportunidades.",
-    href: "/servicios/desarrollo-web/",
-    type: "Servicio",
-    category: "Web",
-    tags: ["web", "landing", "ecommerce", "sitio web", "conversion", "ux"],
+      "Reestructuración de propuesta de valor, diagnóstico de brecha comercial y arquitectura para licitaciones corporativas.",
+    href: "/servicios/",
+    type: "Capacidad",
+    category: "Estrategia",
+    tags: ["estrategia", "consultoria", "negocio", "licitaciones", "b2b", "modelo comercial"],
     featured: true,
-    icon: Globe2,
+    icon: Compass,
   },
   {
-    id: "servicio-seo",
-    title: "SEO Avanzado",
+    id: "cap-marca",
+    title: "Dirección de Arte & Percepción de Marca",
     description:
-      "Arquitectura, contenido y optimización técnica para aparecer cuando tus clientes buscan soluciones.",
-    href: "/servicios/seo/",
-    type: "Servicio",
-    category: "SEO",
-    tags: ["seo", "google", "organico", "posicionamiento", "contenido"],
+      "Sistemas de identidad visual editorial de estándar internacional para fondos de inversión, clínicas y consorcios industriales.",
+    href: "/servicios/",
+    type: "Capacidad",
+    category: "Dirección de Arte",
+    tags: ["branding", "marca", "identidad", "direccion de arte", "diseno editorial", "estatus"],
     featured: true,
-    icon: Search,
+    icon: Palette,
   },
   {
-    id: "servicio-paid-media",
-    title: "Paid Media",
+    id: "cap-software",
+    title: "Plataformas Web & Software a Medida",
     description:
-      "Campañas digitales conectadas a landing pages, eventos y medición real.",
-    href: "/servicios/paid-media/",
-    type: "Servicio",
-    category: "Campañas",
-    tags: ["ads", "google ads", "meta ads", "campañas", "publicidad"],
+      "Desarrollo de portales digitales de alto rendimiento, showrooms 3D y ecosistemas de software seguro.",
+    href: "/servicios/",
+    type: "Capacidad",
+    category: "Tecnología",
+    tags: ["desarrollo web", "software", "plataformas", "astro", "react", "3d", "seguridad"],
     featured: true,
-    icon: Megaphone,
+    icon: Laptop,
   },
   {
-    id: "servicio-automatizacion",
-    title: "Automatización e IA",
+    id: "cap-novvor",
+    title: "Diseño Industrial & Hardware (Powered by NOVVOR)",
     description:
-      "Flujos para conectar formularios, WhatsApp, CRM, correos e IA para no perder leads.",
-    href: "/servicios/automatizacion-ia/",
-    type: "Servicio",
-    category: "Automatización",
-    tags: ["ia", "automatizacion", "whatsapp", "crm", "leads"],
+      "Diseño de producto físico, modelado CAD, carcasas de sensores IoT e interfaces HMI para maquinaria y faenas mineras.",
+    href: "/servicios/",
+    type: "Capacidad",
+    category: "Ingeniería",
+    tags: ["novvor", "diseno industrial", "iot", "hmi", "maquinaria", "sensores", "telemetria", "hardware"],
     featured: true,
-    icon: Bot,
-  },
-  {
-    id: "servicio-branding",
-    title: "Branding y Comunicación",
-    description:
-      "Identidad, mensaje y sistema visual para transmitir confianza antes de vender.",
-    href: "/servicios/branding/",
-    type: "Servicio",
-    category: "Marca",
-    tags: ["branding", "marca", "identidad", "confianza", "comunicacion"],
-    featured: false,
-    icon: Brush,
-  },
-  {
-    id: "servicio-analitica",
-    title: "Analítica y Tracking",
-    description:
-      "Eventos, conversiones y dashboards para saber qué canal genera oportunidades.",
-    href: "/servicios/analitica-tracking/",
-    type: "Servicio",
-    category: "Datos",
-    tags: ["ga4", "gtm", "tracking", "analitica", "dashboard", "metricas"],
-    featured: true,
-    icon: BarChart3,
+    icon: Cpu,
   },
 ];
 
 const pageItems: SearchItem[] = [
   {
-    id: "diagnostico",
-    title: "Diagnóstico gratuito",
+    id: "page-contacto",
+    title: "Start a Project (Evaluación de Proyecto)",
     description:
-      "Revisamos tu presencia digital y te mostramos oportunidades concretas de mejora.",
-    href: "/diagnostico/",
-    type: "Página",
-    category: "Conversión",
-    tags: ["diagnostico", "auditoria", "revision", "contacto"],
-    featured: true,
-    icon: Sparkles,
-  },
-  {
-    id: "servicios",
-    title: "Servicios digitales",
-    description:
-      "Explora las soluciones de Enix Studio para web, SEO, campañas, IA, branding y analítica.",
-    href: "/servicios/",
-    type: "Página",
-    category: "Servicios",
-    tags: ["servicios", "catalogo", "soluciones"],
-    featured: true,
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: "catalogo-servicios",
-    title: "Catálogo de servicios",
-    description:
-      "Revisa todos los servicios digitales de Enix Studio como un catálogo de soluciones.",
-    href: "/servicios/catalogo/",
-    type: "Página",
-    category: "Servicios",
-    tags: ["catalogo", "servicios", "soluciones"],
-    featured: false,
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: "nosotros",
-    title: "Nosotros",
-    description:
-      "Conoce la visión, misión y forma de trabajo de Enix Studio, agencia digital de NOVVOR.",
-    href: "/nosotros/",
-    type: "Página",
-    category: "Empresa",
-    tags: ["nosotros", "empresa", "novvor", "equipo"],
-    featured: false,
-    icon: ShieldCheck,
-  },
-  {
-    id: "contacto",
-    title: "Contacto",
-    description:
-      "Conversemos sobre tu presencia digital, web, SEO, automatización o campañas.",
+      "Inicie una conversación estratégica y confidencial con nuestros socios directores bajo acuerdo NDA.",
     href: "/contacto/",
     type: "Página",
-    category: "Contacto",
-    tags: ["contacto", "correo", "consulta"],
-    featured: false,
-    icon: FileText,
+    category: "Admisión",
+    tags: ["contacto", "comenzar proyecto", "evaluacion", "iniciar", "presupuesto", "nda", "socios"],
+    featured: true,
+    icon: Send,
   },
   {
-    id: "blog",
-    title: "Blog",
+    id: "page-casos",
+    title: "Work & Casos de Consultoría",
     description:
-      "Guías y recursos para tomar mejores decisiones sobre web, SEO, automatización y marketing digital.",
-    href: "/blog/",
-    type: "Página",
-    category: "Recursos",
-    tags: ["blog", "guias", "recursos", "articulos"],
-    featured: false,
-    icon: FileText,
-  },
-  {
-    id: "casos",
-    title: "Casos",
-    description:
-      "Escenarios y soluciones digitales aplicadas a problemas reales de empresas.",
+      "Intervenciones estratégicas en minería, fondos inmobiliarios y clínicas médicas de alta complejidad.",
     href: "/casos/",
     type: "Página",
     category: "Casos",
-    tags: ["casos", "soluciones", "ejemplos"],
-    featured: false,
-    icon: BriefcaseBusiness,
-  },
-];
-
-const marketItems: SearchItem[] = [
-  {
-    id: "cl",
-    title: "Servicios digitales en Chile",
-    description:
-      "Soluciones digitales para empresas en Chile: web, SEO, campañas, automatización y analítica.",
-    href: "/cl/",
-    type: "Mercado",
-    category: "Chile",
-    tags: ["chile", "marketing digital", "servicios digitales"],
-    featured: false,
-    icon: MapPin,
+    tags: ["casos", "portafolio", "work", "clientes", "altair", "kronos", "valen", "mineria", "real estate"],
+    featured: true,
+    icon: Briefcase,
   },
   {
-    id: "region-metropolitana",
-    title: "Marketing digital en Región Metropolitana",
+    id: "page-servicios",
+    title: "Capacidades & Alcance Consultivo",
     description:
-      "Servicios digitales para empresas B2B, ecommerce, tecnología y servicios profesionales en Santiago.",
-    href: "/cl/region-metropolitana/",
-    type: "Mercado",
-    category: "Chile",
-    tags: ["santiago", "region metropolitana", "marketing digital"],
-    featured: false,
-    icon: MapPin,
-  },
-  {
-    id: "region-antofagasta",
-    title: "Marketing digital en Región de Antofagasta",
-    description:
-      "Soluciones digitales para empresas industriales, proveedores mineros y servicios B2B del norte de Chile.",
-    href: "/cl/region-antofagasta/",
-    type: "Mercado",
-    category: "Chile",
-    tags: ["antofagasta", "mineria", "industrial", "b2b"],
-    featured: false,
-    icon: MapPin,
-  },
-];
-
-const industryItems: SearchItem[] = [
-  {
-    id: "industria-b2b",
-    title: "Empresas B2B",
-    description:
-      "Sistemas digitales para empresas que venden servicios complejos y necesitan confianza, seguimiento y datos.",
-    href: "/industrias/empresas-b2b/",
-    type: "Industria",
-    category: "B2B",
-    tags: ["b2b", "ventas complejas", "servicios"],
-    featured: false,
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: "industria-industrial",
-    title: "Empresas industriales",
-    description:
-      "Web, SEO y analítica para empresas industriales que necesitan transmitir capacidad técnica y confianza.",
-    href: "/industrias/empresas-industriales/",
-    type: "Industria",
-    category: "Industria",
-    tags: ["industrial", "mineria", "proveedores", "b2b"],
-    featured: false,
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: "industria-mineria",
-    title: "Proveedores mineros",
-    description:
-      "Presencia digital, SEO y confianza técnica para proveedores mineros e industriales.",
-    href: "/industrias/proveedores-mineros/",
-    type: "Industria",
-    category: "Minería",
-    tags: ["mineria", "proveedores", "industrial", "antofagasta"],
-    featured: false,
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: "industria-servicios-profesionales",
-    title: "Servicios profesionales",
-    description:
-      "Soluciones digitales para consultoras, estudios y empresas de servicios que necesitan confianza y captación.",
-    href: "/industrias/servicios-profesionales/",
-    type: "Industria",
+      "Los 4 pilares de consultoría, arte, ingeniería y modelos de acompañamiento directivo del estudio.",
+    href: "/servicios/",
+    type: "Página",
     category: "Servicios",
-    tags: ["consultoras", "servicios profesionales", "b2b"],
-    featured: false,
-    icon: BriefcaseBusiness,
+    tags: ["capacidades", "servicios", "pilares", "alcance", "advisory", "transformacion"],
+    featured: true,
+    icon: Compass,
   },
   {
-    id: "industria-ecommerce",
-    title: "Ecommerce",
+    id: "page-nosotros",
+    title: "Studio & Manifiesto Directivo",
     description:
-      "Web, campañas, tracking y optimización para tiendas online y negocios que venden digitalmente.",
-    href: "/industrias/ecommerce/",
-    type: "Industria",
-    category: "Ecommerce",
-    tags: ["ecommerce", "tienda online", "campañas", "tracking"],
+      "Conozca la visión, principios directivos, trayectoria desde 2017 y la alianza tecnológica con NOVVOR.",
+    href: "/nosotros/",
+    type: "Página",
+    category: "Estudio",
+    tags: ["nosotros", "estudio", "manifiesto", "principios", "equipo", "liderazgo", "socios"],
     featured: false,
-    icon: BriefcaseBusiness,
+    icon: Users,
+  },
+  {
+    id: "page-blog",
+    title: "Insights & Perspectivas Estratégicas",
+    description:
+      "Ensayos y análisis sobre dirección de negocio, percepción de marca, arquitectura de software e IA aplicada.",
+    href: "/blog/",
+    type: "Página",
+    category: "Pensamiento",
+    tags: ["blog", "insights", "articulos", "perspectivas", "ensayos"],
+    featured: false,
+    icon: BookOpen,
+  },
+];
+
+const caseItems: SearchItem[] = [
+  {
+    id: "caso-altair",
+    title: "Altair Industrial Systems (Minería & Telemetría IoT)",
+    description:
+      "Reestructuración comercial y plataforma industrial para licitaciones de gran escala. Adjudicación de +$4.8M USD.",
+    href: "/casos/",
+    type: "Caso",
+    category: "Minería & Industria",
+    tags: ["altair", "mineria", "telemetria", "iot", "hmi", "licitaciones", "novvor"],
+    featured: true,
+    icon: Cpu,
+  },
+  {
+    id: "caso-kronos",
+    title: "Kronos Capital & Residences (Luxury Real Estate)",
+    description:
+      "Ecosistema digital de captación de capital y showroom 3D para fondos de inversión. +$18M USD en ventas pre-launch.",
+    href: "/casos/",
+    type: "Caso",
+    category: "Real Estate & Private Equity",
+    tags: ["kronos", "real estate", "inmobiliaria", "lujo", "inversion", "showroom 3d"],
+    featured: true,
+    icon: Palette,
+  },
+  {
+    id: "caso-valen",
+    title: "Valen Medical Institutes (Medicina de Alta Complejidad)",
+    description:
+      "Modernización de experiencia clínica, triaje asistido por IA y ciberseguridad. 3.4x en tasa de admisión médica.",
+    href: "/casos/",
+    type: "Caso",
+    category: "Salud & Clínicas",
+    tags: ["valen", "salud", "medica", "clinicas", "triaje", "ia", "cirugia"],
+    featured: true,
+    icon: Briefcase,
   },
 ];
 
@@ -303,7 +188,7 @@ const blogItems: SearchItem[] = blogArticles.map((article) => ({
   title: article.title,
   description: article.description,
   href: `/blog/${article.slug}/`,
-  type: "Artículo",
+  type: "Perspectiva",
   category: article.category,
   tags: [
     ...article.keywords,
@@ -311,14 +196,13 @@ const blogItems: SearchItem[] = blogArticles.map((article) => ({
     article.serviceRelated,
     article.category,
   ],
-  featured: article.slug === "landing-page-de-conversion" || article.slug === "seo-para-empresas",
+  featured: false,
   icon: FileText,
 }));
 
 export const searchIndex: SearchItem[] = [
-  ...serviceItems,
+  ...capabilityItems,
   ...pageItems,
+  ...caseItems,
   ...blogItems,
-  ...marketItems,
-  ...industryItems,
 ];

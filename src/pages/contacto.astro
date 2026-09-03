@@ -2,297 +2,86 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer.astro";
-import FormSubmitScript from "@/components/FormSubmitScript.astro";
-import Icon from "@/components/Icon.astro";
-import LeadModal from "@/components/LeadModal";
-import AnimatedHeroBackground from "@/components/hero/AnimatedHeroBackground";
+import ProjectInquiry from "@/components/home/ProjectInquiry";
 import { site } from "@/data/site";
 
 const canonical = `${site.url}/contacto/`;
 
-const contactReasons = [
-  "Nuevo proyecto",
-  "Consulta comercial",
-  "Cliente actual / soporte",
-  "Alianza estratégica",
-  "Prensa o comunicaciones",
-  "Proveedor",
-  "Otro",
-];
-
-const contactCards = [
-  {
-    icon: "briefcase",
-    title: "Nuevos proyectos",
-    text: "Para empresas que desean desarrollar una web, campaña, automatización o estrategia digital.",
-    cta: "Ir a diagnóstico",
-    href: "/diagnostico/",
-  },
-  {
-    icon: "message",
-    title: "Clientes actuales",
-    text: "Para soporte, continuidad operativa o solicitudes relacionadas con servicios activos.",
-    cta: "Escribir a soporte",
-    href: `mailto:${site.email}?subject=Soporte%20cliente%20actual`,
-  },
-  {
-    icon: "layers",
-    title: "Alianzas y partners",
-    text: "Para propuestas de colaboración, integraciones, tecnología o crecimiento conjunto.",
-    cta: "Contactar equipo",
-    href: `mailto:${site.email}?subject=Alianza%20estratégica`,
-  },
-  {
-    icon: "mail",
-    title: "Consultas generales",
-    text: "Para cualquier otra solicitud institucional, administrativa o comercial.",
-    cta: "Enviar mensaje",
-    href: "#formulario-contacto",
-  },
-];
-
-const routingSteps = [
-  ["mail", "Recibimos tu solicitud"],
-  ["search", "Identificamos el motivo"],
-  ["users", "Derivamos al área correcta"],
-  ["chevronRight", "Respondemos próximos pasos"],
-];
-
-const officialChannels = [
-  ["mail", "Email", site.email, `mailto:${site.email}`],
-  ["message", "Formulario", "Derivación según solicitud", "#formulario-contacto"],
-  ["clock", "Horario", "Lunes a viernes · horario hábil", "#"],
-];
-
-const institutionalLinks = [
-  ["Nosotros", "/nosotros/"],
-  ["Servicios", "/servicios/"],
-  ["Casos", "/casos/"],
-  ["Diagnóstico", "/diagnostico/"],
-];
-
 const contactPageSchema = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
-  name: "Contacto | Enix Studio",
+  name: "Start a Project | ENIX STUDIO",
   url: canonical,
   description:
-    "Contacta a Enix Studio, agencia digital de NOVVOR, por nuevos proyectos, consultas comerciales, soporte, alianzas o solicitudes institucionales.",
+    "Solicite una evaluación estratégica con la dirección de ENIX STUDIO. Consultoría, dirección de arte e ingeniería de alto impacto.",
   mainEntity: {
     "@type": "Organization",
     name: site.name,
-    alternateName: "ENIX STUDIO by NOVVOR",
+    alternateName: "ENIX STUDIO",
     email: site.email,
     url: site.url,
-    brand: { "@type": "Brand", name: "NOVVOR" },
-    areaServed: "Chile",
+    brand: { "@type": "Brand", name: "ENIX STUDIO" },
   },
 };
 ---
 
 <BaseLayout
-  title="Contacto | Enix Studio"
-  description="Contacta a Enix Studio, agencia digital de NOVVOR. Escríbenos por nuevos proyectos, consultas comerciales, soporte, alianzas o solicitudes institucionales."
+  title="Start a Project | ENIX STUDIO"
+  description="Inicie la evaluación estratégica de su proyecto. ENIX Studio acepta un número limitado de compromisos trimestrales con supervisión directa de socios directores."
   canonical={canonical}
-  breadcrumbs={[{ name: "Inicio", url: site.url }, { name: "Contacto", url: canonical }]}
+  breadcrumbs={[{ name: "Inicio", url: site.url }, { name: "Start a Project", url: canonical }]}
 >
   <Header currentPath={Astro.url.pathname} client:load />
-  <LeadModal client:idle />
   <script is:inline type="application/ld+json" set:html={JSON.stringify(contactPageSchema)} />
 
-  <main>
-    <section id="top" class="motion-reduce-safe relative isolate overflow-hidden bg-[#070b14] pb-20 pt-36 text-white md:pt-44">
-      <AnimatedHeroBackground variant="default" intensity="medium" />
-      <div class="container relative z-10 grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-        <div>
-          <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-xs font-black uppercase text-red-100">
-            <span class="size-2 rounded-full bg-enix-glow shadow-[0_0_18px_rgba(239,68,68,0.85)]"></span>
-            Contacto corporativo
-          </p>
-          <h1 class="mt-6 max-w-4xl text-[clamp(2.1rem,3.5vw,3.55rem)] font-black leading-[1.03] tracking-tight">
-            Conversemos sobre tu próximo proyecto digital.
-          </h1>
-          <p class="mt-7 max-w-2xl text-lg leading-8 text-slate-300">
-            Si necesitas hablar con Enix Studio por un proyecto, alianza, soporte o consulta general, escríbenos y derivaremos tu solicitud al equipo correspondiente.
-          </p>
-          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a class="btn btn-primary" href="#formulario-contacto"><Icon name="mail" class="size-5" /> Enviar mensaje</a>
-            <a class="btn btn-secondary" href="/diagnostico/"><Icon name="search" class="size-5" /> Solicitar diagnóstico gratuito</a>
-          </div>
-        </div>
-
-        <div class="rounded-[2rem] border border-white/10 bg-white/[0.06] p-5 shadow-2xl shadow-black/25 backdrop-blur-xl md:p-7">
-          <img src="/brand/enix-logo.png" alt="Enix Studio" width="210" height="54" class="h-10 w-auto object-contain brightness-0 invert md:h-11" />
-          <p class="mt-6 text-lg leading-8 text-slate-300">
-            Enix Studio es la agencia digital de NOVVOR, especializada en estrategia, diseño, tecnología, marketing y automatización para empresas.
-          </p>
-          <div class="mt-8 grid gap-3 sm:grid-cols-2">
-            {officialChannels.map(([icon, label, value, href]) => (
-              <a href={href} class="group rounded-2xl border border-white/10 bg-white/[0.055] p-4 transition hover:border-red-300/40 hover:bg-white/[0.08]">
-                <span class="grid size-10 place-items-center rounded-xl bg-red-500/10 text-red-200"><Icon name={icon} class="size-5" /></span>
-                <p class="mt-4 text-xs font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
-                <p class="mt-1 text-sm font-black text-white group-hover:text-red-100">{value}</p>
-              </a>
-            ))}
-          </div>
-        </div>
+  <main class="min-h-screen pt-28 md:pt-36 bg-[#0A0A0A] text-[#F7F7F4]">
+    {/* Page Header */}
+    <div class="px-4 md:px-8 pb-12 border-b border-white/10">
+      <div class="max-w-7xl mx-auto">
+        <span class="font-mono text-xs uppercase tracking-[0.25em] text-neutral-400 block mb-4">
+          Selective Engagements · Confidential Advisory
+        </span>
+        <h1 class="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-tight">
+          Start a Project.
+        </h1>
+        <p class="mt-6 max-w-3xl text-lg md:text-xl text-neutral-300 font-light leading-relaxed">
+          Trabajamos con un número deliberadamente limitado de marcas e industrias por trimestre para involucrarnos de forma directa y personal a nivel de directorio. Complete el formulario de calificación a continuación para evaluar encaje y disponibilidad.
+        </p>
       </div>
-    </section>
+    </div>
 
-    <section class="bg-enix-pearl py-16">
-      <div class="container grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {contactCards.map((card) => (
-          <article class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-enix-red/30 hover:shadow-premium">
-            <span class="icon-box mb-5"><Icon name={card.icon} class="size-5" /></span>
-            <h2 class="text-xl font-black">{card.title}</h2>
-            <p class="mt-3 text-sm leading-6 text-slate-600">{card.text}</p>
-            <a class="mt-6 inline-flex items-center gap-2 text-sm font-black text-slate-950 transition group-hover:text-enix-red" href={card.href}>
-              {card.cta} <Icon name="chevronRight" class="size-4" />
-            </a>
-          </article>
-        ))}
-      </div>
-    </section>
+    {/* Dedicated Project Qualification Intake */}
+    <ProjectInquiry client:load />
 
-    <section class="section bg-white">
-      <div class="container grid gap-12 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
-        <aside class="lg:sticky lg:top-28">
-          <p class="eyebrow">Enix Studio</p>
-          <h2 class="mt-3 text-4xl font-black md:text-5xl">Comunicación clara, ordenada y profesional.</h2>
-          <p class="mt-5 text-lg leading-8 text-slate-600">
-            Usa este canal para solicitudes corporativas, coordinación de reuniones, soporte, alianzas, prensa, proveedores o consultas generales.
-          </p>
-          <div class="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h3 class="text-xl font-black">Canales oficiales</h3>
-            <div class="mt-5 grid gap-4">
-              <a class="flex items-center gap-3 font-bold text-slate-700 transition hover:text-enix-red" href={`mailto:${site.email}`}>
-                <Icon name="mail" class="size-5 text-enix-red" /> {site.email}
-              </a>
-              <p class="flex items-center gap-3 font-bold text-slate-700"><Icon name="map" class="size-5 text-enix-red" /> Chile</p>
-              <p class="flex items-center gap-3 font-bold text-slate-700"><Icon name="clock" class="size-5 text-enix-red" /> Lunes a viernes · horario hábil</p>
-            </div>
-          </div>
-        </aside>
-
-        <form id="formulario-contacto" class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-premium md:p-8" name="contacto-corporativo" method="post" data-enix-form>
-          <input type="hidden" name="type" value="contact" />
-          <input type="hidden" name="form-name" value="contacto-corporativo" />
-          <input type="hidden" name="origen" value="pagina-contacto-corporativa" />
-
-          <div>
-            <p class="eyebrow">Formulario corporativo</p>
-            <h2 class="mt-3 text-3xl font-black text-slate-950 md:text-4xl">Enviar mensaje</h2>
-            <p class="mt-3 leading-7 text-slate-600">Completa los datos principales y selecciona el motivo para derivar tu solicitud correctamente.</p>
-          </div>
-
-          <div class="mt-8 grid gap-5 md:grid-cols-2">
-            <label class="block text-sm font-extrabold text-slate-800">
-              Nombre
-              <input class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-enix-red focus:bg-white focus:ring-2 focus:ring-red-500/10" name="nombre" autocomplete="name" placeholder="Tu nombre" required />
-            </label>
-            <label class="block text-sm font-extrabold text-slate-800">
-              Email corporativo
-              <input class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-enix-red focus:bg-white focus:ring-2 focus:ring-red-500/10" name="email" type="email" autocomplete="email" placeholder="correo@empresa.cl" required />
-            </label>
-            <label class="block text-sm font-extrabold text-slate-800">
-              Empresa
-              <input class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-enix-red focus:bg-white focus:ring-2 focus:ring-red-500/10" name="empresa" autocomplete="organization" placeholder="Nombre de empresa" required />
-            </label>
-            <label class="block text-sm font-extrabold text-slate-800">
-              Motivo de contacto
-              <select class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-950 outline-none transition focus:border-enix-red focus:bg-white focus:ring-2 focus:ring-red-500/10" name="motivo" required>
-                <option value="" disabled selected>Selecciona una opción</option>
-                {contactReasons.map((reason) => <option value={reason}>{reason}</option>)}
-              </select>
-            </label>
-            <label class="block text-sm font-extrabold text-slate-800">
-              Teléfono <span class="font-semibold text-slate-400">opcional</span>
-              <input class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-enix-red focus:bg-white focus:ring-2 focus:ring-red-500/10" name="telefono" autocomplete="tel" placeholder="+56 9..." />
-            </label>
-            <label class="block text-sm font-extrabold text-slate-800">
-              Sitio web <span class="font-semibold text-slate-400">opcional</span>
-              <input class="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-enix-red focus:bg-white focus:ring-2 focus:ring-red-500/10" name="sitio" inputmode="url" placeholder="https://empresa.cl" />
-            </label>
-          </div>
-
-          <label class="mt-5 block text-sm font-extrabold text-slate-800">
-            Mensaje
-            <textarea class="mt-2 min-h-36 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-enix-red focus:bg-white focus:ring-2 focus:ring-red-500/10" name="mensaje" placeholder="Cuéntanos brevemente cómo podemos ayudarte." required></textarea>
-          </label>
-
-          <label class="mt-5 flex gap-3 text-sm font-semibold leading-6 text-slate-500">
-            <input class="mt-1 h-4 w-4 rounded border-slate-300 accent-enix-red" type="checkbox" name="consent" required />
-            <span>Acepto ser contactado por Enix Studio para responder mi solicitud.</span>
-          </label>
-
-          <button class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-enix-red px-7 py-4 text-sm font-black text-white shadow-xl shadow-red-100 transition hover:-translate-y-0.5 hover:bg-red-500" type="submit">
-            <Icon name="mail" class="size-5" /> Enviar mensaje
-          </button>
-          <p class="mt-3 rounded-xl px-3 py-2 text-center text-sm font-bold empty:hidden data-[state=error]:border data-[state=error]:border-red-200 data-[state=error]:bg-red-50 data-[state=error]:text-red-700 data-[state=success]:border data-[state=success]:border-emerald-200 data-[state=success]:bg-emerald-50 data-[state=success]:text-emerald-700" data-form-status aria-live="polite"></p>
-          <p class="mt-3 text-center text-xs font-semibold leading-5 text-slate-500">
-            Responderemos tu solicitud a la brevedad según el tipo de consulta. Al enviar aceptas nuestra
-            <a class="font-black text-enix-red hover:underline" href="/politica-de-privacidad/"> Política de Privacidad</a>. Registramos datos técnicos del envío para prevenir spam y proteger nuestras comunicaciones.
-          </p>
-        </form>
-      </div>
-    </section>
-
-    <section class="section bg-enix-ink text-white">
-      <div class="container grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-        <div>
-          <p class="eyebrow">Derivación interna</p>
-          <h2 class="mt-3 text-4xl font-black md:text-5xl">Tu mensaje llega al equipo correcto.</h2>
-          <p class="mt-5 text-lg leading-8 text-slate-300">
-            Esto nos permite responder de forma más ordenada y evitar que tu consulta se pierda entre solicitudes generales.
+    {/* Protocols & Assurances */}
+    <section class="py-20 px-4 md:px-8 border-t border-white/10 bg-[#050505]">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-2">
+          <span class="font-mono text-xs text-neutral-400 uppercase tracking-widest block">01 / Direct Partner Access</span>
+          <h3 class="text-lg font-bold text-white">Atención Directa de Socios</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed font-light">
+            Su iniciativa no será delegada a ejecutivos de cuentas junior. Cada proyecto es analizado y liderado por nuestros socios directores de estrategia, arte y tecnología.
           </p>
         </div>
-        <div class="grid gap-4 md:grid-cols-4">
-          {routingSteps.map(([icon, title], index) => (
-            <article class="rounded-2xl border border-white/10 bg-white/[0.055] p-5">
-              <span class="text-xs font-black text-red-300">0{index + 1}</span>
-              <span class="mt-5 grid size-11 place-items-center rounded-xl bg-red-500/10 text-red-200"><Icon name={icon} class="size-5" /></span>
-              <h3 class="mt-5 text-lg font-black leading-tight">{title}</h3>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
 
-    <section class="section bg-white">
-      <div class="container grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div>
-          <p class="eyebrow">NOVVOR</p>
-          <h2 class="mt-3 text-4xl font-black md:text-5xl">Una agencia digital respaldada por NOVVOR.</h2>
-          <p class="mt-5 text-lg leading-8 text-slate-600">
-            Enix Studio forma parte del ecosistema NOVVOR, combinando estrategia, tecnología, marketing, automatización y analítica para acompañar a empresas que buscan mejorar su presencia digital.
+        <div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-2">
+          <span class="font-mono text-xs text-neutral-400 uppercase tracking-widest block">02 / Strict NDA & Discretion</span>
+          <h3 class="text-lg font-bold text-white">Confidencialidad Garantizada</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed font-light">
+            Firmamos acuerdos de confidencialidad estrictos (NDA) previo a la revisión de modelos de negocio, métricas operativas o propiedad intelectual sensible.
           </p>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2">
-          {institutionalLinks.map(([label, href]) => (
-            <a class="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-5 font-black text-slate-950 transition hover:-translate-y-1 hover:border-enix-red/30 hover:bg-white hover:shadow-premium" href={href}>
-              {label}
-              <Icon name="chevronRight" class="size-5 text-enix-red transition group-hover:translate-x-1" />
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
 
-    <section class="section bg-enix-pearl">
-      <div class="container">
-        <div class="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm md:p-10 lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-10">
-          <div>
-            <p class="eyebrow">Ruta alternativa</p>
-            <h2 class="mt-3 text-3xl font-black md:text-5xl">¿Buscas una recomendación sobre tu web, SEO o marketing?</h2>
-            <p class="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-              Si quieres que revisemos tu situación digital y te orientemos sobre qué mejorar primero, puedes solicitar un diagnóstico gratuito.
-            </p>
-          </div>
-          <a class="btn btn-primary mt-8 lg:mt-0" href="/diagnostico/"><Icon name="search" class="size-5" /> Solicitar diagnóstico gratuito</a>
+        <div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-2">
+          <span class="font-mono text-xs text-neutral-400 uppercase tracking-widest block">03 / Rapid Assessment</span>
+          <h3 class="text-lg font-bold text-white">Respuesta en 24 Horas Hábiles</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed font-light">
+            Evaluamos la compatibilidad estratégica en un plazo máximo de 24 a 48 horas hábiles para coordinar una sesión de trabajo ejecutiva o derivar responsablemente.
+          </p>
         </div>
       </div>
     </section>
   </main>
+
   <Footer />
-  <FormSubmitScript />
 </BaseLayout>

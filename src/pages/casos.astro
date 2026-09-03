@@ -2,181 +2,200 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer.astro";
-import Icon from "@/components/Icon.astro";
-import LeadModal from "@/components/LeadModal";
-import AnimatedHeroBackground from "@/components/hero/AnimatedHeroBackground";
-import { caseFilters, cases, industries } from "@/data/casesData";
+import { consultingCases } from "@/data/selectedWorkData";
 import { site } from "@/data/site";
 
-const pillars = [
-  ["search", "Diagnóstico", "Detectamos qué frena confianza, conversión, captación o eficiencia."],
-  ["target", "Estrategia", "Priorizamos decisiones según impacto comercial y madurez digital."],
-  ["layers", "Implementación", "Diseñamos activos, flujos, tracking y experiencias conectadas."],
-  ["barChart", "Medición", "Leemos comportamiento para optimizar con datos y no con intuición."],
-];
+const canonical = `${site.url}/casos/`;
 
-const qualitativeMetrics = [
-  ["badgeCheck", "Mejora de presencia digital"],
-  ["activity", "Optimización de experiencia"],
-  ["target", "Mayor claridad comercial"],
-  ["megaphone", "Mejor capacidad de captación"],
-  ["briefcase", "Procesos más ordenados"],
-];
-
-const before = ["Mensaje confuso", "Diseño antiguo", "Baja confianza", "Sin CTA", "Sin medición", "Sin automatización"];
-const after = ["Mensaje claro", "Diseño premium", "Mayor confianza", "CTA estratégico", "Tracking activo", "Procesos automatizados"];
+const casesPageSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Work & Consulting Cases | ENIX STUDIO",
+  url: canonical,
+  description:
+    "Casos de consultoría estratégica, dirección de arte e ingeniería aplicada desarrollados por ENIX STUDIO en industrias de alto valor.",
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: consultingCases.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.title,
+      description: item.challenge,
+    })),
+  },
+};
 ---
 
 <BaseLayout
-  title="Casos y transformaciones digitales | ENIX STUDIO"
-  description="Casos conceptuales, soluciones y transformaciones digitales diseñadas por ENIX STUDIO para mejorar presencia, conversión, SEO, automatización y captación."
-  canonical={`${site.url}/casos/`}
-  breadcrumbs={[{ name: "Inicio", url: site.url }, { name: "Casos", url: `${site.url}/casos/` }]}
+  title="Work & Consulting Cases | ENIX STUDIO"
+  description="Casos de consultoría estratégica, dirección de arte e ingeniería industrial para empresas consolidadas, fondos de inversión y líderes de industria."
+  canonical={canonical}
+  breadcrumbs={[{ name: "Inicio", url: site.url }, { name: "Work", url: canonical }]}
 >
   <Header currentPath={Astro.url.pathname} client:load />
-  <LeadModal client:idle />
-  <main>
-    <section class="motion-reduce-safe relative isolate overflow-hidden bg-[#070b14] pb-20 pt-36 text-white md:pt-44">
-      <AnimatedHeroBackground variant="cases" intensity="medium" />
-      <div class="container relative z-10 grid gap-10 lg:grid-cols-[1fr_0.75fr] lg:items-end">
-        <div>
-          <p class="eyebrow">Casos y soluciones</p>
-          <h1 class="mt-5 max-w-5xl text-[clamp(2.1rem,3.5vw,3.55rem)] font-black leading-[1.03] tracking-tight">Casos, soluciones y transformaciones digitales diseñadas para crecer.</h1>
-          <p class="mt-7 max-w-3xl text-lg leading-8 text-slate-300">
-            No mostramos solo diseños. Mostramos problemas reales, decisiones estratégicas y soluciones creadas para mejorar la presencia, conversión y operación digital de una empresa.
-          </p>
-          <a class="btn btn-primary mt-8" href="/#diagnostico"><Icon name="search" class="size-5" /> Solicitar diagnóstico gratuito</a>
-        </div>
-        <div class="rounded-3xl border border-white/10 bg-white/[0.055] p-5 backdrop-blur-xl">
-          <p class="text-xs font-black uppercase tracking-[0.12em] text-slate-500">Enfoque de casos</p>
-          <p class="mt-3 text-2xl font-black">Escenarios estratégicos marcados como concepto, sin inventar clientes reales.</p>
-          <div class="mt-5 grid grid-cols-2 gap-3">
-            {["Confianza", "Conversión", "SEO", "Automatización"].map((item) => <span class="rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm font-black">{item}</span>)}
-          </div>
-        </div>
-      </div>
-    </section>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(casesPageSchema)} />
 
-    <section class="section bg-white">
-      <div class="container">
-        <div class="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
-          <div>
-            <p class="eyebrow">Nuestro enfoque</p>
-            <h2 class="mt-3 text-4xl font-black md:text-5xl">No se trata de hacer algo bonito. Se trata de resolver lo que frena el crecimiento.</h2>
-            <p class="mt-5 text-lg leading-8 text-slate-600">
-              Cada proyecto parte con una pregunta: ¿qué está impidiendo que esta empresa se vea mejor, venda más o funcione con mayor eficiencia?
-            </p>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-            {pillars.map(([icon, title, text]) => (
-              <article class="rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-enix-red/30 hover:bg-white hover:shadow-premium">
-                <span class="icon-box mb-5"><Icon name={icon} class="size-5" /></span>
-                <h3 class="text-2xl font-black">{title}</h3>
-                <p class="mt-3 leading-7 text-slate-600">{text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
+  <main class="min-h-screen bg-[#0A0A0A] text-[#F7F7F4] pt-28 md:pt-36">
 
-    <section class="section bg-enix-pearl">
-      <div class="container">
-        <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <p class="eyebrow">Explora soluciones</p>
-            <h2 class="mt-3 max-w-4xl text-4xl font-black md:text-5xl">Problemas digitales convertidos en sistemas de crecimiento.</h2>
-          </div>
-          <div class="flex max-w-full gap-2 overflow-x-auto pb-2">
-            {caseFilters.map((filter) => (
-              <a class="shrink-0 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-black text-slate-600 transition hover:border-enix-red/30 hover:text-enix-red" href="#casos-grid">{filter}</a>
-            ))}
-          </div>
-        </div>
-
-        <div id="casos-grid" class="mt-10 grid gap-5 lg:grid-cols-2">
-          {cases.map((item) => (
-            <article class="group rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-enix-red/30 hover:shadow-premium">
-              <div class="flex items-start justify-between gap-4">
-                <span class="icon-box"><Icon name={item.icon} class="size-5" /></span>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{item.label}</span>
-              </div>
-              <p class="eyebrow mt-6">{item.category}</p>
-              <h3 class="mt-3 text-3xl font-black leading-tight group-hover:text-enix-red">{item.title}</h3>
-              <div class="mt-6 grid gap-4">
-                <div><strong class="text-sm text-slate-950">Problema inicial</strong><p class="mt-1 leading-7 text-slate-600">{item.problem}</p></div>
-                <div><strong class="text-sm text-slate-950">Solución aplicada</strong><p class="mt-1 leading-7 text-slate-600">{item.solution}</p></div>
-                <div><strong class="text-sm text-slate-950">Resultado esperado</strong><p class="mt-1 leading-7 text-slate-600">{item.result}</p></div>
-              </div>
-              <div class="mt-6 flex flex-wrap gap-2">
-                {item.services.map((service) => <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-enix-red">{service}</span>)}
-              </div>
-              <a class="mt-7 inline-flex items-center gap-2 font-black text-slate-950 transition group-hover:text-enix-red" href={`/casos/${item.slug}/`}>
-                Ver caso <Icon name="chevronRight" class="size-4" />
-              </a>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section class="section bg-enix-ink text-white">
-      <div class="container">
-        <p class="eyebrow">Señales de avance</p>
-        <h2 class="mt-3 max-w-4xl text-4xl font-black md:text-5xl">Medimos progreso sin inflar promesas.</h2>
-        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {qualitativeMetrics.map(([icon, label]) => (
-            <article class="rounded-2xl border border-white/10 bg-white/[0.055] p-5">
-              <Icon name={icon} class="mb-5 size-6 text-enix-glow" />
-              <h3 class="text-lg font-black">{label}</h3>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section class="section bg-white">
-      <div class="container grid gap-6 lg:grid-cols-2">
-        <article class="rounded-[2rem] border border-slate-200 bg-slate-50 p-8">
-          <p class="eyebrow">Antes</p>
-          <h2 class="mt-3 text-4xl font-black">Cuando las piezas no conectan.</h2>
-          <div class="mt-6 grid gap-3">
-            {before.map((item) => <div class="rounded-2xl bg-white p-4 font-bold text-slate-600">{item}</div>)}
-          </div>
-        </article>
-        <article class="relative overflow-hidden rounded-[2rem] bg-enix-ink p-8 text-white shadow-glow">
-          <div class="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-enix-red/25 blur-3xl"></div>
-          <p class="eyebrow">Después</p>
-          <h2 class="relative mt-3 text-4xl font-black">Cuando el sistema trabaja por el negocio.</h2>
-          <div class="relative mt-6 grid gap-3">
-            {after.map((item) => <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4 font-bold text-slate-200">{item}</div>)}
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section bg-enix-pearl">
-      <div class="container">
-        <p class="eyebrow">Industrias</p>
-        <h2 class="mt-3 max-w-4xl text-4xl font-black md:text-5xl">Soluciones aplicables a distintas industrias.</h2>
-        <div class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {industries.map((industry) => (
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 font-black shadow-sm">{industry}</div>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section class="noise section text-white">
-      <div class="container text-center">
-        <p class="eyebrow">Diagnóstico</p>
-        <h2 class="mx-auto mt-4 max-w-4xl text-[clamp(2rem,3.4vw,3.25rem)] font-black leading-[1.04] tracking-tight">Tu empresa también puede convertirse en un caso de crecimiento.</h2>
-        <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-          Analizamos tu presencia digital, detectamos oportunidades y te mostramos qué podrías mejorar para vender más, automatizar procesos o posicionarte mejor.
+    {/* Hero Section */}
+    <section class="px-4 md:px-8 pb-16 border-b border-white/10">
+      <div class="max-w-7xl mx-auto">
+        <span class="font-mono text-xs uppercase tracking-[0.25em] text-neutral-400 block mb-4">
+          Selected Consulting Engagements · Proven Impact
+        </span>
+        <h1 class="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-tight max-w-5xl">
+          Transformaciones estratégicas en industrias de alto valor.
+        </h1>
+        <p class="mt-6 max-w-3xl text-lg md:text-xl text-neutral-300 font-light leading-relaxed">
+          No mostramos maquetas superficiales. Cada proyecto documenta una intervención consultiva integral donde resolvimos cuellos de botella comerciales, reposicionamos la marca y desplegamos tecnología de misión crítica con el respaldo de NOVVOR.
         </p>
-        <a class="btn btn-primary mt-8" href="/#diagnostico"><Icon name="arrowUp" class="size-5" /> Solicitar diagnóstico gratuito</a>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4 text-xs font-mono uppercase tracking-wider text-neutral-400">
+          <span class="px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04]">Heavy Industry & Mining</span>
+          <span class="px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04]">Real Estate & Private Equity</span>
+          <span class="px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04]">Advanced Healthcare</span>
+          <span class="px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.04]">Powered by NOVVOR</span>
+        </div>
+      </div>
+    </section>
+
+    {/* Consulting Cases Deep Dive */}
+    <section class="py-24 md:py-32 px-4 md:px-8">
+      <div class="max-w-7xl mx-auto space-y-28 md:space-y-36">
+        {consultingCases.map((item) => (
+          <article class="p-8 md:p-14 rounded-3xl border border-white/10 bg-neutral-900/40 space-y-12">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
+              <div class="flex items-center gap-3">
+                <span class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">
+                  {item.tag}
+                </span>
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                <span class="font-mono text-xs uppercase tracking-wider text-neutral-300">
+                  {item.industry}
+                </span>
+              </div>
+              <div class="font-mono text-xs px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-white font-semibold self-start sm:self-auto">
+                {item.dealValue}
+              </div>
+            </div>
+
+            <div class="max-w-4xl space-y-3">
+              <span class="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500 block">
+                {item.client} · {item.year}
+              </span>
+              <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+                {item.title}
+              </h2>
+            </div>
+
+            {/* High-Resolution Project Showcase Image */}
+            <div class="overflow-hidden rounded-2xl md:rounded-3xl border border-white/10 bg-neutral-950 aspect-[21/9] shadow-2xl relative">
+              <img
+                src={item.image}
+                alt={item.title}
+                width="1600"
+                height="685"
+                decoding="async"
+                class="w-full h-full object-cover object-center filter brightness-90 contrast-105"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-6 flex items-end justify-between">
+                <span class="font-mono text-xs text-white/80 uppercase tracking-widest bg-black/50 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                  {item.client} · Corporate Case File
+                </span>
+                <span class="font-mono text-xs text-white/70">
+                  Engineering Scope: Full Integration
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
+
+              <div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-3">
+                <span class="font-mono text-[11px] uppercase tracking-widest text-neutral-400 block">
+                  01 / Desafío de Negocio
+                </span>
+                <p class="text-sm text-neutral-300 leading-relaxed font-light">
+                  {item.challenge}
+                </p>
+              </div>
+
+              <div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-3">
+                <span class="font-mono text-[11px] uppercase tracking-widest text-neutral-400 block">
+                  02 / Intervención Consultiva & Estratégica
+                </span>
+                <ul class="space-y-2.5">
+                  {item.consultingScope.map((scope) => (
+                    <li class="text-xs text-neutral-300 flex items-start gap-2 leading-relaxed">
+                      <span class="text-red-500 font-bold">›</span>
+                      <span>{scope}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div class="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-4">
+                <span class="font-mono text-[11px] uppercase tracking-widest text-neutral-400 block">
+                  03 / Impacto Económico & Músculo NOVVOR
+                </span>
+                <div class="space-y-3">
+                  <p class="text-xs font-semibold text-white leading-relaxed">
+                    {item.economicImpact}
+                  </p>
+                  {item.novvorIntegration && (
+                    <div class="pt-3 border-t border-white/10">
+                      <span class="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block mb-1">
+                        Ingeniería Industrial NOVVOR:
+                      </span>
+                      <p class="text-xs text-neutral-400 leading-relaxed font-light">
+                        {item.novvorIntegration}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex flex-wrap gap-2">
+                {item.deliverables.map((deliv) => (
+                  <span class="text-[11px] font-mono px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] text-neutral-300">
+                    {deliv}
+                  </span>
+                ))}
+              </div>
+              <a
+                href="/contacto/"
+                class="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-white hover:text-neutral-300 transition"
+              >
+                Discutir un proyecto similar <span>↗</span>
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    {/* Executive CTA to Start a Project */}
+    <section class="py-24 px-4 md:px-8 border-t border-white/10 bg-[#050505] text-center">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <span class="font-mono text-xs uppercase tracking-[0.2em] text-neutral-400 block">
+          Advisory & Consultation
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white">
+          ¿Tiene un desafío de negocio o tecnología similar?
+        </h2>
+        <p class="text-base text-neutral-400 max-w-xl mx-auto font-light leading-relaxed">
+          Cada proyecto es evaluado bajo acuerdos estrictos de confidencialidad y supervisión de socios directores.
+        </p>
+        <div class="pt-4">
+          <a href="/contacto/" class="btn-editorial bg-white text-black font-bold text-xs uppercase tracking-wider px-8 py-3.5 hover:bg-neutral-200">
+            Iniciar Evaluación de Proyecto ↗
+          </a>
+        </div>
       </div>
     </section>
   </main>
+
   <Footer />
 </BaseLayout>

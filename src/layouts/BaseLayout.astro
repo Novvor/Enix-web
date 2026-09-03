@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
-import { site, services } from "@/data/site";
+import { site } from "@/data/site";
+
 import CookieConsent from "@/components/CookieConsent";
 import GoogleAnalytics from "@/components/GoogleAnalytics.astro";
 import ScrollRevealInit from "@/components/ScrollRevealInit.astro";
@@ -31,34 +32,76 @@ const {
 
 const organizationSchema = {
   "@context": "https://schema.org",
-  "@type": ["Organization", "LocalBusiness", "ProfessionalService"],
+  "@type": ["Organization", "ProfessionalService"],
   name: site.name,
-  alternateName: "ENIX STUDIO by NOVVOR",
+  alternateName: ["ENIX", "ENIX STUDIO", "Enix Studio Global"],
   url: site.url,
   email: site.email,
   description: site.description,
-  slogan: "Sistemas digitales inteligentes para captar, convertir, automatizar y medir oportunidades reales.",
-  brand: { "@type": "Brand", name: "NOVVOR" },
+  slogan: "Consultoría estratégica, dirección de arte e ingeniería aplicada para empresas que compiten en ligas mayores.",
+  priceRange: "$$$$",
+  brand: { "@type": "Brand", name: "ENIX STUDIO" },
   sameAs: [site.linkedin],
-  areaServed: ["Chile", "Latinoamérica"],
-  knowsAbout: ["Desarrollo web", "SEO", "Paid Media", "Automatización comercial", "CRM", "Inteligencia artificial", "Analítica digital"],
+  areaServed: ["Chile", "Latinoamérica", "United States", "Europe", "Global"],
+  knowsAbout: [
+    "Consultoría Estratégica",
+    "Desarrollo Web Corporativo",
+    "Dirección de Arte e Identidad de Marca",
+    "Diseño Industrial y Maquinaria HMI",
+    "Arquitectura de Software y Ciberseguridad",
+    "Inteligencia Artificial Aplicada a Negocios",
+    "Posicionamiento SEO de Autoridad",
+    "Bespoke Digital Platforms",
+  ],
 };
 
 const serviceSchema = {
   "@context": "https://schema.org",
   "@type": "ItemList",
-  itemListElement: services.map(([name, benefit], index) => ({
-    "@type": "ListItem",
-    position: index + 1,
-    item: {
-      "@type": "Service",
-      name,
-      description: benefit,
-      provider: { "@type": "Organization", name: site.name },
-      areaServed: "Chile",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      item: {
+        "@type": "Service",
+        name: "Consultoría Estratégica & Modelo Comercial",
+        description: "Reestructuración de narrativa comercial B2B, posicionamiento de autoridad y arquitectura para licitaciones privadas de alto valor.",
+        provider: { "@type": "Organization", name: site.name },
+      },
     },
-  })),
+    {
+      "@type": "ListItem",
+      position: 2,
+      item: {
+        "@type": "Service",
+        name: "Dirección de Arte & Identidad Corporativa",
+        description: "Sistemas de identidad visual editorial de estándar global para fondos de inversión, clínicas y consorcios industriales.",
+        provider: { "@type": "Organization", name: site.name },
+      },
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      item: {
+        "@type": "Service",
+        name: "Plataformas Web & Software a Medida",
+        description: "Desarrollo de portales digitales de alta velocidad, showrooms 3D y ecosistemas de admisión de clientes con ciberseguridad avanzada.",
+        provider: { "@type": "Organization", name: site.name },
+      },
+    },
+    {
+      "@type": "ListItem",
+      position: 4,
+      item: {
+        "@type": "Service",
+        name: "Diseño Industrial & Hardware (con NOVVOR)",
+        description: "Diseño de producto físico, carcasas de sensores IoT, interfaces HMI de maquinaria pesada y telemetría industrial.",
+        provider: { "@type": "Organization", name: site.name },
+      },
+    },
+  ],
 };
+
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -101,6 +144,7 @@ const breadcrumbSchema = {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <meta name="keywords" content="consultoría digital estratégica, desarrollo web corporativo chile, diseño industrial novvor, estudio de diseño boutique, consultora tecnológica chile, software a medida empresas, branding de alto valor, digital consultancy LATAM" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_CL" />
     <meta property="og:site_name" content={site.name} />
@@ -108,11 +152,14 @@ const breadcrumbSchema = {
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
-    <meta name="theme-color" content="#0B1120" />
+    <meta name="theme-color" content="#0A0A0A" />
+
     <GoogleAnalytics />
     <script is:inline type="application/ld+json" set:html={JSON.stringify(organizationSchema)} />
     <script is:inline type="application/ld+json" set:html={JSON.stringify(serviceSchema)} />

@@ -1,0 +1,122 @@
+---
+interface Props {
+  // Props if needed
+}
+---
+
+<section class="relative min-h-[92vh] flex flex-col justify-between pt-32 pb-16 md:pt-40 md:pb-24 px-4 md:px-8 border-b border-black/[0.08] bg-[#F7F7F4] text-[#0A0A0A] overflow-hidden">
+  {/* Subtle ambient lighting */}
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <div class="absolute -top-40 right-0 w-[600px] h-[600px] bg-red-600/[0.03] rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 -left-40 w-[500px] h-[500px] bg-stone-300/30 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="container relative z-10 max-w-7xl mx-auto flex-1 flex flex-col justify-between">
+    {/* Top status bar: Global Scope & Confidentiality */}
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-black/[0.08] pb-6 pt-2">
+      <div class="flex items-center gap-3">
+        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="font-mono text-xs uppercase tracking-[0.2em] text-neutral-600 font-medium">
+          Strategic & Digital Consultancy · Worldwide Operations
+        </span>
+      </div>
+      <div class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-500">
+        LATAM · North America · Europe · Bespoke Advisory
+      </div>
+    </div>
+
+    {/* Hero Main Copy: Authority, Economics & High-Stakes */}
+    <div class="my-auto py-12 md:py-16 max-w-5xl">
+      <div class="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full border border-black/10 bg-black/[0.03] text-neutral-700 font-mono text-xs uppercase tracking-wider">
+        <span>Strategy</span>
+        <span class="text-neutral-400">/</span>
+        <span>Creative Direction</span>
+        <span class="text-neutral-400">/</span>
+        <span>Industrial & Software Engineering</span>
+      </div>
+
+      <h1 class="text-[clamp(2.4rem,6.2vw,5.5rem)] font-black tracking-[-0.04em] leading-[0.97] text-neutral-950">
+        Consultoría estratégica, diseño e ingeniería para empresas que compiten en ligas mayores.
+      </h1>
+
+      <p class="mt-8 md:mt-10 max-w-3xl text-lg md:text-xl text-neutral-600 font-light leading-relaxed tracking-[-0.01em]">
+        No vendemos plantillas ni cobramos por horas sueltas. Diseñamos la posición dominante de empresas consolidadas, fondos de inversión e industrias de alto valor: resolvemos cuellos de botella comerciales, elevamos la percepción de marca y construimos plataformas tecnológicas a medida con el respaldo industrial de <strong class="text-neutral-900 font-medium">NOVVOR</strong>.
+      </p>
+
+      <div class="mt-10 md:mt-12 flex flex-wrap items-center gap-4">
+        <a href="#work" class="btn-editorial btn-editorial-dark text-sm px-8 py-3.5 shadow-sm">
+          Revisar Casos de Consultoría <span class="text-xs">↓</span>
+        </a>
+        <a href="/contacto/" class="btn-editorial btn-editorial-chalk text-sm px-8 py-3.5">
+          Iniciar Evaluación de Proyecto <span class="text-xs">↗</span>
+        </a>
+        <span class="ml-2 font-mono text-xs uppercase tracking-widest text-neutral-500 hidden sm:inline-block">
+          Directorio & C-Level Focus
+        </span>
+      </div>
+    </div>
+
+    {/* Visual Editorial Frame: High-End Photography & Art Direction */}
+    <div class="my-6 relative rounded-2xl md:rounded-3xl border border-black/10 overflow-hidden shadow-2xl bg-neutral-950 aspect-[21/9] max-h-[460px]">
+      <img
+        src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1800&q=85"
+        alt="ENIX Studio Architecture & Strategic Vision"
+        width="1800"
+        height="771"
+        fetchpriority="high"
+        decoding="async"
+        class="w-full h-full object-cover object-center filter brightness-[0.82] contrast-105"
+        loading="eager"
+      />
+
+      {/* Overlay Scrim & Editorial Text */}
+      <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-6 md:p-10 flex flex-col justify-between text-white">
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs uppercase tracking-[0.25em] text-white/80 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+            Selected Advisory Showcase
+          </span>
+          <span class="font-mono text-xs uppercase tracking-widest text-white/60 hidden sm:inline-block">
+            Est. 2017 · Global Practice
+          </span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <span class="text-xs font-mono uppercase tracking-[0.2em] text-neutral-400 block mb-1">
+              Cross-Disciplinary Execution
+            </span>
+            <p class="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-white">
+              Where Strategy, Aesthetics and Heavy Tech Intersect.
+            </p>
+          </div>
+          <a
+            href="/casos/"
+            class="text-xs font-mono uppercase tracking-widest text-white bg-white/10 hover:bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 transition self-start sm:self-auto shrink-0"
+          >
+            Explorar Portafolio ↗
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {/* Industrial & Strategic Pillars Strip */}
+    <div class="border-t border-black/[0.08] pt-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-neutral-500 font-mono text-xs uppercase tracking-wider">
+      <div>
+        <span class="text-neutral-400 block text-[10px] mb-1">01 / Advisory</span>
+        <span class="text-neutral-900 font-semibold font-sans text-sm">Consultoría de Negocio</span>
+      </div>
+      <div>
+        <span class="text-neutral-400 block text-[10px] mb-1">02 / Identity</span>
+        <span class="text-neutral-900 font-semibold font-sans text-sm">Dirección de Arte & Marca</span>
+      </div>
+      <div>
+        <span class="text-neutral-400 block text-[10px] mb-1">03 / Software</span>
+        <span class="text-neutral-900 font-semibold font-sans text-sm">Plataformas Digitales</span>
+      </div>
+      <div>
+        <span class="text-neutral-400 block text-[10px] mb-1">04 / Heavy Tech</span>
+        <span class="text-neutral-900 font-semibold font-sans text-sm">Ingeniería & Diseño Industrial (NOVVOR)</span>
+      </div>
+    </div>
+  </div>
+</section>

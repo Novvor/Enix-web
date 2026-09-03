@@ -2,195 +2,196 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer.astro";
-import Icon from "@/components/Icon.astro";
-import LeadModal from "@/components/LeadModal";
-import AnimatedHeroBackground from "@/components/hero/AnimatedHeroBackground";
-import EnixServiceFinder from "@/components/services/EnixServiceFinder";
-import { ServicesRouteRecommender } from "@/components/ServicesDecisionTool";
 import { site } from "@/data/site";
 
-const systemStages = [
-  ["search", "Atracción", "SEO, contenido y campañas para llegar al cliente correcto.", ["SEO", "Contenido", "Paid Media"]],
-  ["target", "Conversión", "Web, landings, UX y CRO para generar acción.", ["Web", "Landing", "CRO"]],
-  ["badgeCheck", "Confianza", "Marca, mensaje, diseño y casos para elevar percepción.", ["Branding", "Mensaje", "Diseño"]],
-  ["bot", "Seguimiento", "CRM, automatización, IA y email para no perder leads.", ["CRM", "IA", "Email"]],
-  ["barChart", "Medición", "GA4, GTM, eventos y dashboards para decidir con datos.", ["GA4", "GTM", "Eventos"]],
-  ["activity", "Optimización", "Iteración continua basada en comportamiento y resultados.", ["Datos", "Pruebas", "Mejora"]],
+const canonical = `${site.url}/servicios/`;
+
+const capabilitiesDetailed = [
+  {
+    num: "01",
+    name: "Consultoría Estratégica & Modelo Comercial",
+    tagline: "Strategic Advisory & Market Positioning",
+    desc: "Diagnosticamos la brecha entre el valor real de su empresa y la forma en que el mercado lo percibe. Reestructuramos la narrativa comercial, diseñamos ofertas para cuentas corporativas de alto ticket y definimos la arquitectura para licitaciones privadas e internacionales.",
+    deliverables: [
+      "Diagnóstico Integral de Percepción & Brecha Comercial",
+      "Estructuración de Propuestas de Valor Enterprise",
+      "Estrategia de Diferenciación para Licitaciones y Negociación",
+      "Gobernanza de Marca y Lineamientos Comerciales para Directorios",
+    ],
+  },
+  {
+    num: "02",
+    name: "Dirección de Arte & Percepción de Marca",
+    tagline: "Brand Identity & Perception Engineering",
+    desc: "No hacemos logos decorativos. Creamos identidades visuales editoriales de estándar global que transmiten solidez patrimonial, sofisticación estética y autoridad indiscutible ante inversionistas, clientes institucionales y talento calificado.",
+    deliverables: [
+      "Estrategia e Identidad Visual de Marca",
+      "Sistemas de Diseño Editorial de Alta Costura",
+      "Dirección de Fotografía, Video y Contenido Institucional",
+      "Manuales de Aplicación y Directrices Tipográficas",
+    ],
+  },
+  {
+    num: "03",
+    name: "Plataformas Digitales & Software a Medida",
+    tagline: "Enterprise Platforms & Digital Ecosystems",
+    desc: "Desarrollo de software a medida con foco en velocidad extrema, accesibilidad y ciberseguridad. Desde showrooms digitales interactivos y modelado 3D para real estate, hasta portales corporativos multi-región y plataformas transaccionales B2B.",
+    deliverables: [
+      "Portales Digitales Institucionales de Alta Velocidad (Astro/React)",
+      "Showrooms Inmersivos & Visualizadores 3D en el Navegador",
+      "Ecosistemas Digitales de Admisión y Registro de Clientes",
+      "Auditoría Técnica de Ciberseguridad y Cumplimiento Normativo",
+    ],
+  },
+  {
+    num: "04",
+    name: "Diseño Industrial & Hardware (Powered by NOVVOR)",
+    tagline: "Industrial Design, Hardware & Machine Interfaces (HMI)",
+    desc: "El punto de convergencia donde el diseño digital se encuentra con la ingeniería física. En alianza directa con NOVVOR, abordamos diseño de productos tangibles, carcasas para equipamiento de faena, interfaces de usuario para operadores de maquinaria y telemetría de sensores IoT.",
+    deliverables: [
+      "Diseño Industrial & Modelado CAD de Producto Físico",
+      "Interfaces de Control de Maquinaria (HMI) para Faenas Mineras e Industriales",
+      "Integración de Sensores IoT y Telemetría en Tiempo Real",
+      "Infraestructura Cloud Crítica & Modelos de IA Aplicada",
+    ],
+  },
 ];
 
-const looseVsSystem = [
-  ["Web sin estrategia", "Web conectada a objetivos"],
-  ["Campañas sin landing", "Campañas con landing y tracking"],
-  ["SEO sin contenido útil", "SEO alineado a intención de búsqueda"],
-  ["Leads sin seguimiento", "CRM y automatización de seguimiento"],
-  ["Reportes sin decisiones", "Datos para optimizar"],
-  ["Diseño sin conversión", "Diseño orientado a confianza y acción"],
-];
-
-const scenarios = [
-  ["lineChart", "Empresa con web antigua", "Buena empresa, mala percepción digital.", "Rediseño web, mensaje claro, estructura SEO y CTAs.", "Mayor confianza y mejor ruta de contacto."],
-  ["megaphone", "Empresa que gasta en campañas", "Anuncios activos, pero sin claridad de retorno.", "Landing, tracking, eventos y dashboard.", "Mejor lectura de qué canal genera oportunidades."],
-  ["bot", "Empresa con leads desordenados", "Consultas por WhatsApp y formularios sin seguimiento.", "CRM, automatización y alertas internas.", "Proceso comercial más ordenado y menor pérdida de oportunidades."],
-];
-
-const packages = [
-  ["Presencia Profesional", "Para empresas que necesitan verse serias y confiables.", ["Web", "Branding base", "SEO técnico inicial", "Formulario/contacto", "Analítica base"], "/diagnostico/?paquete=presencia-profesional"],
-  ["Crecimiento Digital", "Para empresas que quieren atraer y convertir más oportunidades.", ["Web o landing", "SEO", "Paid Media", "Tracking", "Optimización"], "/diagnostico/?paquete=crecimiento-digital"],
-  ["Sistema Comercial Digital", "Para empresas que quieren ordenar captación, seguimiento y medición.", ["CRM", "Automatización", "IA", "Email", "Tracking", "Dashboard"], "/diagnostico/?paquete=sistema-comercial"],
-  ["Escala Estratégica", "Para empresas que quieren integrar todo.", ["Estrategia", "Web", "SEO", "Paid Media", "Automatización", "Analítica", "Mejora continua"], "/diagnostico/?paquete=escala-estrategica"],
-];
-
-const faqs: [string, string][] = [
-  ["¿Qué servicio necesito si no sé por dónde empezar?", "Lo ideal es partir con un diagnóstico. Muchas veces el problema no es evidente: puede estar en la web, el mensaje, el SEO, la campaña, el tracking o el seguimiento."],
-  ["¿Pueden mejorar una web existente?", "Sí. Podemos auditarla, optimizarla o rediseñarla según su estado actual, objetivos y capacidad de conversión."],
-  ["¿Conviene hacer SEO o campañas pagadas primero?", "Depende del objetivo. Las campañas pueden acelerar resultados, pero el SEO construye visibilidad sostenida. En muchos casos, ambos trabajan mejor conectados."],
-  ["¿La automatización reemplaza la atención humana?", "No necesariamente. Bien aplicada, la automatización filtra, ordena y acelera la atención, dejando a las personas las conversaciones más importantes."],
-  ["¿Trabajan con empresas pequeñas?", "Sí. Lo importante es que exista una necesidad clara y disposición a ordenar la presencia digital con criterio profesional."],
-  ["¿Pueden encargarse de todo el sistema?", "Sí. Enix puede integrar web, SEO, campañas, automatización, IA y analítica en una estrategia conectada."],
-];
+const capabilitiesPageSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Capabilities & Advisory Scope | ENIX STUDIO",
+  url: canonical,
+  description:
+    "Capacidades de consultoría estratégica, dirección de arte, desarrollo de plataformas digitales e ingeniería industrial desarrollada con NOVVOR.",
+  provider: {
+    "@type": "Organization",
+    name: site.name,
+  },
+};
 ---
 
 <BaseLayout
-  title="Servicios Digitales | Web, SEO, Automatización y Marketing | Enix Studio"
-  description="Servicios digitales para empresas: desarrollo web, SEO avanzado, paid media, branding, automatización, IA y analítica. Enix Studio crea sistemas para atraer, convertir y medir oportunidades."
-  canonical={`${site.url}/servicios/`}
-  breadcrumbs={[{ name: "Inicio", url: site.url }, { name: "Servicios", url: `${site.url}/servicios/` }]}
-  faqItems={faqs}
+  title="Capabilities & Advisory Scope | ENIX STUDIO"
+  description="Consultoría estratégica, dirección de arte e ingeniería de software e industrial para organizaciones de alta exigencia."
+  canonical={canonical}
+  breadcrumbs={[{ name: "Inicio", url: site.url }, { name: "Capabilities", url: canonical }]}
 >
   <Header currentPath={Astro.url.pathname} client:load />
-  <LeadModal client:idle />
-  <main>
-    <section class="motion-reduce-safe relative isolate overflow-hidden bg-[#070b14] pb-24 pt-36 text-white md:pt-44">
-      <AnimatedHeroBackground variant="services" intensity="medium" />
-      <div class="container relative z-10 grid items-center gap-12 lg:grid-cols-[0.92fr_1.08fr]">
-        <div>
-          <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-4 py-2 text-xs font-black uppercase text-red-100">
-            <span class="size-2 rounded-full bg-enix-glow"></span>
-            Servicios digitales para empresas
-          </p>
-          <h1 class="mt-6 max-w-5xl text-[clamp(2.1rem,3.5vw,3.55rem)] font-black leading-[1.03] tracking-tight">Servicios digitales diseñados para convertir presencia en oportunidades reales.</h1>
-          <p class="mt-7 max-w-2xl text-lg leading-8 text-slate-300">Unimos web, SEO, campañas, branding, automatización, IA y analítica para que tu negocio no solo se vea mejor, sino que también atraiga, convierta y mida mejor.</p>
-          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a class="btn btn-primary" href="#selector-problema"><Icon name="target" class="size-5" /> Encontrar mi solución</a>
-            <a class="btn btn-secondary" href="/diagnostico/"><Icon name="search" class="size-5" /> Solicitar diagnóstico gratuito</a>
-          </div>
-          <p class="mt-4 text-sm font-semibold leading-6 text-slate-400">No necesitas saber qué servicio contratar. Te ayudamos a identificar qué revisar primero.</p>
-        </div>
-        <div class="rounded-[2rem] border border-white/10 bg-white/[0.055] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl">
-          <div class="flex items-center justify-between border-b border-white/10 pb-5">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Service Command Center</p>
-              <h2 class="mt-1 text-2xl font-black">Servicios conectados</h2>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(capabilitiesPageSchema)} />
+
+  <main class="min-h-screen bg-[#0A0A0A] text-[#F7F7F4] pt-28 md:pt-36">
+    {/* Page Header */}
+    <section class="px-4 md:px-8 pb-16 border-b border-white/10">
+      <div class="max-w-7xl mx-auto">
+        <span class="font-mono text-xs uppercase tracking-[0.25em] text-neutral-400 block mb-4">
+          Core Capabilities · Strategic Scope
+        </span>
+        <h1 class="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-tight max-w-5xl">
+          Consultoría estratégica, diseño e ingeniería aplicada.
+        </h1>
+        <p class="mt-6 max-w-3xl text-lg md:text-xl text-neutral-300 font-light leading-relaxed">
+          Diseñamos soluciones integrales para organizaciones donde la reputación, el rendimiento técnico y la continuidad operativa son activos críticos de negocio.
+        </p>
+      </div>
+    </section>
+
+    {/* Pillars Grid */}
+    <section class="py-24 md:py-32 px-4 md:px-8">
+      <div class="max-w-7xl mx-auto space-y-24 md:space-y-32">
+        {capabilitiesDetailed.map((cap) => (
+          <article class="p-8 md:p-14 rounded-3xl border border-white/10 bg-neutral-900/40 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-start">
+            <div class="lg:col-span-4 space-y-4">
+              <span class="font-mono text-sm text-neutral-500 block">
+                {cap.num} / 04
+              </span>
+              <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                {cap.name}
+              </h2>
+              <p class="text-xs font-mono tracking-wider uppercase text-neutral-400">
+                {cap.tagline}
+              </p>
             </div>
-            <span class="rounded-full bg-red-500/15 px-3 py-1 text-xs font-black text-red-100">Sistema</span>
-          </div>
-          <div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-            {["Web", "SEO", "Ads", "CRM", "IA", "Tracking", "Branding", "Leads"].map((item) => (
-              <div class="rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-center text-sm font-black text-slate-200">{item}</div>
-            ))}
-          </div>
-          <div class="mt-6 rounded-2xl border border-red-400/20 bg-red-500/10 p-5">
-            <p class="text-sm font-black text-red-100">No vendemos servicios sueltos. Construimos sistemas digitales para atraer, convertir y escalar.</p>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <EnixServiceFinder client:visible />
+            <div class="lg:col-span-8 space-y-8">
+              <p class="text-base md:text-lg text-neutral-300 font-light leading-relaxed">
+                {cap.desc}
+              </p>
 
-    <section class="section bg-white">
-      <div class="container">
-        <div class="max-w-4xl">
-          <p class="eyebrow">Sistema ENIX</p>
-          <h2 class="mt-3 text-4xl font-black md:text-5xl">Cada servicio cumple una función dentro del crecimiento.</h2>
-          <p class="mt-5 text-lg leading-8 text-slate-600">Una web sin SEO no atrae. Una campaña sin landing no convierte. Un lead sin seguimiento se pierde. Por eso conectamos servicios como un sistema.</p>
-        </div>
-        <div class="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {systemStages.map(([icon, title, text, tags]) => (
-            <article class="group rounded-2xl border border-slate-200 bg-slate-50 p-6 transition hover:-translate-y-1 hover:border-enix-red/30 hover:bg-white hover:shadow-premium">
-              <span class="icon-box mb-5"><Icon name={icon as string} class="size-5" /></span>
-              <h3 class="text-2xl font-black">{title}</h3>
-              <p class="mt-3 text-sm leading-6 text-slate-600">{text}</p>
-              <div class="mt-5 flex flex-wrap gap-2">{(tags as string[]).map((tag) => <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">{tag}</span>)}</div>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-
-    <section class="section bg-white">
-      <div class="container">
-        <div class="max-w-4xl">
-          <p class="eyebrow">Servicio suelto vs Sistema Enix</p>
-          <h2 class="mt-3 text-4xl font-black md:text-5xl">El problema no es contratar un servicio. Es contratar piezas que no conversan entre sí.</h2>
-        </div>
-        <div class="mt-10 grid gap-6 lg:grid-cols-2">
-          <article class="rounded-[2rem] border border-slate-200 bg-slate-50 p-7">
-            <h3 class="text-2xl font-black text-slate-950">Servicio suelto</h3>
-            <div class="mt-6 grid gap-3">{looseVsSystem.map(([loose]) => <div class="rounded-2xl bg-white p-4 font-bold text-slate-500">{loose}</div>)}</div>
+              <div class="pt-6 border-t border-white/10">
+                <span class="font-mono text-xs uppercase tracking-widest text-neutral-400 block mb-4">
+                  Entregables & Alcance Típico
+                </span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {cap.deliverables.map((item) => (
+                    <div class="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex items-start gap-2 text-xs text-neutral-300">
+                      <span class="text-red-500 font-bold">›</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </article>
-          <article class="rounded-[2rem] border border-red-400/20 bg-enix-ink p-7 text-white shadow-glow">
-            <h3 class="text-2xl font-black">Sistema Enix</h3>
-            <div class="mt-6 grid gap-3">{looseVsSystem.map(([, system]) => <div class="rounded-2xl border border-white/10 bg-white/[0.055] p-4 font-bold text-slate-200"><Icon name="check" class="mr-2 inline size-4 text-red-300" />{system}</div>)}</div>
-          </article>
-        </div>
-        <a class="btn btn-primary mt-8" href="/diagnostico/?problema=sistema" rel="nofollow">Quiero construir un sistema, no piezas sueltas</a>
+        ))}
       </div>
     </section>
 
-    <ServicesRouteRecommender client:visible />
-
-    <section class="section bg-white">
-      <div class="container">
-        <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div class="max-w-4xl"><p class="eyebrow">Escenarios aplicados</p><h2 class="mt-3 text-4xl font-black md:text-5xl">Cómo se ve esto aplicado en un negocio real.</h2></div>
-          <a class="btn btn-light" href="/casos/">Ver casos y soluciones</a>
+    {/* Engagement Models */}
+    <section class="py-24 px-4 md:px-8 border-t border-white/10 bg-[#070707]">
+      <div class="max-w-7xl mx-auto">
+        <div class="max-w-2xl mb-12">
+          <span class="font-mono text-xs uppercase tracking-[0.2em] text-neutral-400 block mb-3">
+            Engagement Formats
+          </span>
+          <h3 class="text-3xl sm:text-4xl font-black text-white">
+            Modelos de Colaboración
+          </h3>
+          <p class="text-sm text-neutral-400 mt-2 font-light">
+            Estructuramos compromisos de trabajo según la madurez y necesidad de cada organización.
+          </p>
         </div>
-        <div class="mt-10 grid gap-5 md:grid-cols-3">
-          {scenarios.map(([icon, title, problem, solution, result]) => (
-            <article class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-              <span class="icon-box mb-5"><Icon name={icon} class="size-5" /></span>
-              <h3 class="text-2xl font-black">{title}</h3>
-              <p class="mt-4 text-sm font-black uppercase text-enix-red">Problema</p><p class="mt-2 leading-7 text-slate-600">{problem}</p>
-              <p class="mt-4 text-sm font-black uppercase text-enix-red">Solución</p><p class="mt-2 leading-7 text-slate-600">{solution}</p>
-              <p class="mt-4 text-sm font-black uppercase text-enix-red">Resultado cualitativo</p><p class="mt-2 leading-7 text-slate-600">{result}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
 
-    <section class="section bg-enix-ink text-white">
-      <div class="container">
-        <p class="eyebrow">Paquetes estratégicos</p><h2 class="mt-3 max-w-4xl text-4xl font-black md:text-5xl">Soluciones según el momento de tu empresa.</h2>
-        <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {packages.map(([title, text, items, href], index) => (
-            <article class={`rounded-[2rem] border p-6 ${index === 3 ? "border-red-300/40 bg-red-600/15 shadow-glow" : "border-white/10 bg-white/[0.055]"}`}>
-              <h3 class="text-2xl font-black">{title}</h3><p class="mt-4 text-sm leading-6 text-slate-300">{text}</p>
-              <ul class="mt-6 grid gap-2 text-sm font-bold text-slate-200">{(items as string[]).map((item) => <li><Icon name="check" class="mr-2 inline size-4 text-red-300" />{item}</li>)}</ul>
-              <a class="mt-7 inline-flex min-h-11 items-center font-black text-red-200 hover:text-white" href={href as string} rel={(href as string).includes("?") ? "nofollow" : undefined}>Solicitar recomendación <Icon name="chevronRight" class="ml-1 size-4" /></a>
-            </article>
-          ))}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="p-8 rounded-2xl border border-white/10 bg-white/[0.02] space-y-4">
+            <span class="font-mono text-xs text-neutral-400 uppercase tracking-widest block">01 / Bespoke Transformation</span>
+            <h4 class="text-xl font-bold text-white">Intervención de Alcance Cerrado</h4>
+            <p class="text-xs text-neutral-300 leading-relaxed font-light">
+              Proyectos de 8 a 16 semanas enfocados en resolver un desafío de negocio específico: reposicionamiento de marca corporativa, lanzamiento de un portal o showroom digital, o rediseño de interfaz industrial de un producto.
+            </p>
+          </div>
+
+          <div class="p-8 rounded-2xl border border-white/10 bg-white/[0.02] space-y-4">
+            <span class="font-mono text-xs text-neutral-400 uppercase tracking-widest block">02 / Advisory & Directorship</span>
+            <h4 class="text-xl font-bold text-white">Acompañamiento Estratégico Continuo</h4>
+            <p class="text-xs text-neutral-300 leading-relaxed font-light">
+              Participación directa a nivel de directorio y gerencia general para supervisar la evolución del ecosistema digital, gobierno de datos, optimización y nuevas implementaciones de ingeniería con NOVVOR.
+            </p>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section bg-white">
-      <div class="container grid gap-10 lg:grid-cols-[0.75fr_1.25fr]">
-        <div><p class="eyebrow">FAQ comercial</p><h2 class="mt-3 text-4xl font-black md:text-5xl">Preguntas antes de elegir servicios.</h2></div>
-        <div class="space-y-3">{faqs.map(([question, answer]) => <details class="rounded-xl border border-slate-200 bg-slate-50 p-5"><summary class="cursor-pointer font-black">{question}</summary><p class="mt-3 leading-7 text-slate-600">{answer}</p></details>)}</div>
-      </div>
-    </section>
-
-    <section class="motion-reduce-safe relative isolate overflow-hidden bg-[#070b14] py-24 text-white">
-      <AnimatedHeroBackground variant="services" intensity="soft" />
-      <div class="container relative z-10 text-center">
-        <p class="eyebrow">Siguiente paso</p>
-        <h2 class="mx-auto mt-4 max-w-5xl text-[clamp(2rem,3.4vw,3.25rem)] font-black leading-[1.04] tracking-tight">Antes de contratar otro servicio digital, descubre qué necesita realmente tu negocio.</h2>
-        <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-300">Una web, una campaña o una automatización pueden funcionar mejor cuando responden a un diagnóstico claro. Revisemos tu situación y definamos por dónde conviene empezar.</p>
-        <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row"><a class="btn btn-primary" href="/diagnostico/">Solicitar diagnóstico gratuito</a><a class="btn btn-secondary" href="/contacto/">Hablar con Enix Studio</a></div>
+    {/* Executive CTA to Start a Project */}
+    <section class="py-24 px-4 md:px-8 border-t border-white/10 bg-[#050505] text-center">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <span class="font-mono text-xs uppercase tracking-[0.2em] text-neutral-400 block">
+          Initiate Engagement
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white">
+          Inicie una conversación estratégica con nuestra dirección.
+        </h2>
+        <p class="text-base text-neutral-400 max-w-xl mx-auto font-light leading-relaxed">
+          Cada proyecto es evaluado bajo acuerdos estrictos de confidencialidad (NDA).
+        </p>
+        <div class="pt-4">
+          <a href="/contacto/" class="btn-editorial bg-white text-black font-bold text-xs uppercase tracking-wider px-8 py-3.5 hover:bg-neutral-200">
+            Start a Project ↗
+          </a>
+        </div>
       </div>
     </section>
   </main>
+
   <Footer />
 </BaseLayout>

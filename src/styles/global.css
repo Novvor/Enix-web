@@ -22,10 +22,11 @@ html {
 body {
   overflow-x: clip;
   margin: 0;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  background: #f8fafc;
-  color: #0f172a;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f7f7f4;
+  color: #0a0a0a;
 }
+
 
 a {
   color: inherit;
@@ -238,6 +239,74 @@ textarea {
   border: 1px solid rgba(15, 23, 42, 0.1);
   background: #fff;
 }
+
+/* Editorial Boutique Styling */
+.btn-editorial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 2.85rem;
+  padding: 0.75rem 1.4rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-editorial-dark {
+  background: #0a0a0a;
+  color: #f7f7f4;
+  border: 1px solid #1f1f1f;
+}
+
+.btn-editorial-dark:hover {
+  background: #1c1c1c;
+  border-color: #333333;
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+.btn-editorial-chalk {
+  background: #ffffff;
+  color: #0a0a0a;
+  border: 1px solid rgba(10, 10, 10, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.btn-editorial-chalk:hover {
+  background: #f7f7f4;
+  border-color: rgba(10, 10, 10, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-editorial-outline-white {
+  background: transparent;
+  color: #f7f7f4;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-editorial-outline-white:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.eyebrow-editorial {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8e8d88;
+}
+
+.title-editorial {
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+}
+
 
 @media (max-width: 768px) {
   .section {
