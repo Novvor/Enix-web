@@ -3,6 +3,7 @@ import { ArrowRight, ExternalLink, RotateCcw, Send, Sparkles } from "lucide-reac
 import { heroExampleChips, siteConfig } from "@/content/site";
 import { ENIXMascot, ENIX_MOOD, type ENIXMood } from "@/components/mascot/ENIXMascot";
 import { EnixMascotAnimatedSvg } from "@/components/mascot/EnixMascotAnimatedSvg";
+import QuickReplyPanel from "./QuickReplyPanel";
 import {
   ASSISTANT_OPEN_EVENT,
   clearProjectDraft,
@@ -20,7 +21,7 @@ import type { ProjectDraft } from "@/lib/project/schema";
 import "./assistant.css";
 
 const HERO_TOOLTIP_MESSAGES = [
-  "¿Te ayudo?",
+  "¡Hola! Soy Steve, ¿te ayudo?",
   "¡Comencemos un proyecto!",
   "Cuéntame tu idea y la ordenamos juntos",
   "¿Web, app, sistema o marketing? Te guío",
@@ -38,6 +39,7 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
   const [lastAppliedChipPrompt, setLastAppliedChipPrompt] = useState("");
   const [pendingChip, setPendingChip] = useState<{ prompt: string; category: string | null } | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [pendingUserText, setPendingUserText] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [assistantMode, setAssistantMode] = useState<"ai" | "guided" | null>(null);
   const [lastFailedText, setLastFailedText] = useState<string | null>(null);
@@ -171,6 +173,8 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
     setErrorMsg(null);
     setPendingChip(null);
     setThreadExpanded(true);
+    setPendingUserText(clean);
+    setInputText("");
     setIsSending(true);
     isNearBottomRef.current = true;
 
@@ -192,15 +196,16 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
 
       if (result.error) {
         setErrorMsg(result.error);
+        setInputText(clean);
       } else {
         setDraft(result.draft);
         setAssistantMode(result.response.mode);
-        setInputText("");
         setLastAppliedChipPrompt("");
         setLastFailedText(null);
         setLastRequestId(null);
       }
     } finally {
+      setPendingUserText(null);
       setIsSending(false);
     }
   }
@@ -246,7 +251,7 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
   }
 
   const activeTooltipText = isSending
-    ? "Pensando la mejor opción para tu caso…"
+    ? "Steve está pensando la mejor opción…"
     : errorMsg
       ? "Ups, revisa este detalle y lo intentamos de nuevo"
       : inputText.trim().length > 0
@@ -314,21 +319,31 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
 
       <div className="hero-chat-card" data-assistant-mode={assistantMode || "ready"}>
 
-        {hasConversation && draft && (
+        {(hasConversation || isSending) && (
           <div
             ref={threadRef}
             className="hero-thread"
             onScroll={handleThreadScroll}
             role="log"
             aria-live="polite"
-            aria-label="Conversación con el asesor de ENIX Studio"
+            aria-label="Conversación con Steve, asesor de ENIX Studio"
           >
-            {draft.messages.map((msg) => (
+            {(draft?.messages || []).map((msg) => (
               <div
                 key={msg.id}
                 className={`chat-bubble-row ${msg.role === "user" ? "is-user" : "is-assistant"}`}
               >
                 <div className="chat-bubble">{msg.text}</div>
+
+                {msg.role === "assistant" && msg.blueprintHighlights && msg.blueprintHighlights.length > 0 && (
+                  <div className="blueprint-highlights-row" aria-label="Actualizaciones en tu ficha">
+                    {msg.blueprintHighlights.map((hl) => (
+                      <span key={`${msg.id}-${hl}`} className="blueprint-pill">
+                        ✦ {hl}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {msg.role === "assistant" && msg.links && msg.links.length > 0 && (
                   <div className="chat-bubble-links">
@@ -346,10 +361,21 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
               </div>
             ))}
 
+            {isSending && pendingUserText && (
+              <div className="chat-bubble-row is-user">
+                <div className="chat-bubble">{pendingUserText}</div>
+              </div>
+            )}
+
             {isSending && (
               <div className="chat-bubble-row is-assistant">
-                <div className="chat-typing" role="status">
-                  <span>Pensando la mejor recomendación para tu caso…</span>
+                <div className="chat-typing" role="status" aria-live="polite">
+                  <span>Steve está pensando</span>
+                  <span className="steve-thinking-dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
                 </div>
               </div>
             )}
@@ -357,24 +383,14 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
         )}
 
         {hasConversation && latestAssistant?.options && latestAssistant.options.length > 0 && !isSending && (
-          <div className="chat-quick-replies" role="group" aria-label="Respuestas rápidas">
-            {latestAssistant.options.slice(0, 3).map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                className="chat-quick-btn"
-                onClick={() => {
-                  if (opt.value === "__open_submit__" || opt.value === "__open_brief__") {
-                    window.location.href = "/create-project/";
-                    return;
-                  }
-                  void handleSubmitText(opt.value, true);
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          <QuickReplyPanel
+            messageId={latestAssistant.id}
+            options={latestAssistant.options}
+            selectionMode={latestAssistant.selectionMode}
+            disabled={isSending}
+            onSelectValue={(val) => void handleSubmitText(val, true)}
+            onRequestOther={() => textareaRef.current?.focus()}
+          />
         )}
 
         <form onSubmit={handleFormSubmit} noValidate>
@@ -466,7 +482,13 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
             </div>
 
             <button type="submit" className="btn btn-primary composer-submit" disabled={isSending}>
-              <span>{hasConversation ? "Enviar" : "Conversar con el asesor"}</span>
+              <span>
+                {isSending
+                  ? "Steve está pensando…"
+                  : hasConversation
+                    ? "Enviar"
+                    : "Conversar con Steve"}
+              </span>
               <Send size={15} aria-hidden="true" />
             </button>
           </div>

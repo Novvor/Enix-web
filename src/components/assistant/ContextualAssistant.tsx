@@ -3,6 +3,7 @@ import { ArrowRight, ExternalLink, MessageSquare, Send, Sparkles, X } from "luci
 import { getPageContext, normalizePageId } from "@/lib/project/catalog";
 import { ENIXMascot, ENIX_MOOD, type ENIXMood } from "@/components/mascot/ENIXMascot";
 import { EnixMascotAnimatedSvg } from "@/components/mascot/EnixMascotAnimatedSvg";
+import QuickReplyPanel from "./QuickReplyPanel";
 import {
   ASSISTANT_OPEN_EVENT,
   CHAT_ACTIVE_EVENT,
@@ -43,6 +44,7 @@ export default function ContextualAssistant({
   const [inputText, setInputText] = useState("");
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [pendingUserText, setPendingUserText] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [assistantMode, setAssistantMode] = useState<"ai" | "guided" | null>(null);
   const [isGreeting, setIsGreeting] = useState(false);
@@ -181,6 +183,9 @@ export default function ContextualAssistant({
 
     setErrorMsg(null);
     setPendingPrompt(null);
+    setPendingUserText(clean);
+    setInputText("");
+    setBarText("");
     setIsSending(true);
     isNearBottomRef.current = true;
 
@@ -197,13 +202,13 @@ export default function ContextualAssistant({
 
       if (result.error) {
         setErrorMsg(result.error);
+        setInputText(clean);
       } else {
         setDraft(result.draft);
         setAssistantMode(result.response.mode);
-        setInputText("");
-        setBarText("");
       }
     } finally {
+      setPendingUserText(null);
       setIsSending(false);
     }
   }
@@ -249,7 +254,7 @@ export default function ContextualAssistant({
           {showHintBubble && (
             <div className="ctx-hint-bubble" role="status">
               <div className="ctx-hint-head">
-                <span>Asesor de ENIX Studio</span>
+                <span>Steve · Asesor de ENIX</span>
                 <button
                   type="button"
                   className="ctx-hint-close"
@@ -300,8 +305,8 @@ export default function ContextualAssistant({
                 className="ctx-dock-input"
                 placeholder={
                   messages.length > 0
-                    ? "Continuar conversación…"
-                    : "Pregúntale al asesor de ENIX…"
+                    ? "Continuar con Steve…"
+                    : "Pregúntale a Steve, asesor de ENIX…"
                 }
                 value={barText}
                 onChange={(e) => setBarText(e.target.value)}
@@ -348,14 +353,16 @@ export default function ContextualAssistant({
                 />
                 <div className="ctx-drawer-title-group">
                   <h2 id={drawerTitleId} className="ctx-drawer-title">
-                    Asesor comercial de ENIX
+                    Steve · Asesor de ENIX
                   </h2>
                   <span className="ctx-drawer-subtitle">
-                    {assistantMode === "ai"
-                      ? "IA activa"
-                      : assistantMode === "guided"
-                        ? "Modo guiado"
-                        : `Contexto: ${pageCtx.pageTitle}`}
+                    {isSending
+                      ? "Steve está pensando…"
+                      : assistantMode === "ai"
+                        ? "IA activa"
+                        : assistantMode === "guided"
+                          ? "Modo guiado"
+                          : `Contexto: ${pageCtx.pageTitle}`}
                   </span>
                 </div>
               </div>
@@ -419,6 +426,15 @@ export default function ContextualAssistant({
                   className={`chat-bubble-row ${msg.role === "user" ? "is-user" : "is-assistant"}`}
                 >
                   <div className="chat-bubble">{msg.text}</div>
+                  {msg.role === "assistant" && msg.blueprintHighlights && msg.blueprintHighlights.length > 0 && (
+                    <div className="blueprint-highlights-row" aria-label="Actualizaciones en tu ficha">
+                      {msg.blueprintHighlights.map((hl) => (
+                        <span key={`${msg.id}-${hl}`} className="blueprint-pill">
+                          ✦ {hl}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {msg.role === "assistant" && msg.links && msg.links.length > 0 && (
                     <div className="chat-bubble-links">
                       {msg.links.map((link) => (
@@ -432,10 +448,36 @@ export default function ContextualAssistant({
                 </div>
               ))}
 
+              {!isSending && (() => {
+                const latestAst = [...messages].reverse().find((m) => m.role === "assistant");
+                if (!latestAst?.options?.length) return null;
+                return (
+                  <QuickReplyPanel
+                    messageId={latestAst.id}
+                    options={latestAst.options}
+                    selectionMode={latestAst.selectionMode}
+                    disabled={isSending}
+                    onSelectValue={(val) => void handleSend(val, true)}
+                    onRequestOther={() => textareaRef.current?.focus()}
+                  />
+                );
+              })()}
+
+              {isSending && pendingUserText && (
+                <div className="chat-bubble-row is-user">
+                  <div className="chat-bubble">{pendingUserText}</div>
+                </div>
+              )}
+
               {isSending && (
                 <div className="chat-bubble-row is-assistant">
-                  <div className="chat-typing" role="status">
-                    <span>Revisando tu consulta…</span>
+                  <div className="chat-typing" role="status" aria-live="polite">
+                    <span>Steve está pensando</span>
+                    <span className="steve-thinking-dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
                   </div>
                 </div>
               )}

@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import {
   CATEGORY_LABELS,
+  COMMERCIAL_STAGE_LABELS,
+  COMMERCIAL_STAGE_ORDER,
   MODALITY_LABELS,
   PRIORITY_LABELS,
   STATUS_LABELS,
@@ -27,10 +29,13 @@ import {
   createEmptyBrief,
   normalizeBrief,
   type ChatMessage,
+  type CommercialStage,
   type EngagementModality,
   type ProjectBrief,
   type ProjectDraft
 } from "@/lib/project/schema";
+import QuickReplyPanel from "@/components/assistant/QuickReplyPanel";
+import "@/components/assistant/assistant.css";
 import {
   addManualRequirement,
   applyBriefPatch,
@@ -109,6 +114,7 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
   const [assistantMode, setAssistantMode] = useState<"guided" | "ai">("guided");
   const [submissionConnected, setSubmissionConnected] = useState<boolean>(false);
   const [newReqText, setNewReqText] = useState("");
+  const [pendingUserText, setPendingUserText] = useState<string | null>(null);
   const [copiedFull, setCopiedFull] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -266,6 +272,8 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
     if (isSending) return;
 
     setTurnError(null);
+    setPendingUserText(clean);
+    setInputText("");
     setIsSending(true);
     isNearBottomRef.current = true;
 
@@ -295,13 +303,14 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
 
       if (result.error) {
         setTurnError(result.error);
+        setInputText(clean);
       } else {
         setBrief(result.draft.brief);
         setMessages(result.draft.messages);
         setAssistantMode(result.response.mode);
-        setInputText("");
       }
     } finally {
+      setPendingUserText(null);
       setIsSending(false);
     }
   }
@@ -429,7 +438,7 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
               : ENIX_MOOD.idle;
 
   const currentTip = isSending
-    ? "Pensando la mejor recomendación y actualizando tu ficha en vivo…"
+    ? "Steve está pensando la mejor recomendación y actualizando tu ficha…"
     : sendState.kind === "success"
       ? "¡Enviada! Guarda tu referencia o descarga una copia si la necesitas."
       : VIEW_TIPS[activeView][tipIndex];
@@ -531,6 +540,31 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
           </div>
         )}
 
+        {/* 6-Stage Commercial Journey Rail */}
+        {(() => {
+          const latestStage: CommercialStage =
+            activeView === "submit"
+              ? "evaluation"
+              : latestAssistant?.commercialStage ||
+                (messages.length === 0 ? "discover" : readiness.defined.length >= 4 ? "summary" : "possibilities");
+          const currentIdx = COMMERCIAL_STAGE_ORDER.indexOf(latestStage);
+          return (
+            <div className="studio-stage-rail no-print" aria-label="Progreso de definición del proyecto">
+              {COMMERCIAL_STAGE_ORDER.map((st, idx) => (
+                <span
+                  key={st}
+                  className={`studio-stage-step ${
+                    idx === currentIdx ? "is-current" : idx < currentIdx ? "is-done" : ""
+                  }`}
+                >
+                  <span className="studio-stage-dot" aria-hidden="true" />
+                  <span>{COMMERCIAL_STAGE_LABELS[st]}</span>
+                </span>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Real status bar: Ya definido vs Por aclarar */}
         <div className="studio-readiness-bar no-print">
           <div className="ws-readiness-pill is-defined">
@@ -561,7 +595,7 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
               <div className="studio-mascot-bubble" key={`chat-${currentTip}`} role="status">
                 <span className="studio-tip-tag">
                   <Lightbulb size={13} aria-hidden="true" />
-                  Tip del asesor
+                  Tip de Steve
                 </span>
                 <p>{currentTip}</p>
               </div>
@@ -620,7 +654,7 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
               role="log"
               aria-live="polite"
             >
-              {messages.length === 0 && (
+              {messages.length === 0 && !pendingUserText && (
                 <div className="studio-empty-chat">
                   <h1 className="studio-empty-title">¿Qué proyecto vamos a diseñar juntos hoy?</h1>
                   <p className="studio-empty-sub">
@@ -652,6 +686,15 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
                   className={`ws-msg-row ${msg.role === "user" ? "is-user" : "is-assistant"}`}
                 >
                   <div className="ws-msg-bubble">{msg.text}</div>
+                  {msg.role === "assistant" && msg.blueprintHighlights && msg.blueprintHighlights.length > 0 && (
+                    <div className="blueprint-highlights-row" aria-label="Actualizaciones en tu ficha">
+                      {msg.blueprintHighlights.map((hl) => (
+                        <span key={`${msg.id}-${hl}`} className="blueprint-pill">
+                          ✦ {hl}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {msg.role === "assistant" && msg.links && msg.links.length > 0 && (
                     <div className="ws-msg-links">
                       {msg.links.map((link) => (
@@ -665,37 +708,40 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
                 </div>
               ))}
 
+              {isSending && pendingUserText && (
+                <div className="ws-msg-row is-user">
+                  <div className="ws-msg-bubble">{pendingUserText}</div>
+                </div>
+              )}
+
               {isSending && (
                 <div className="ws-msg-row is-assistant">
-                  <div className="ws-msg-typing" role="status">
-                    Pensando la mejor recomendación y actualizando tu ficha…
+                  <div className="ws-msg-typing" role="status" aria-live="polite">
+                    <span>Steve está pensando</span>
+                    <span className="ws-thinking-dots" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
                   </div>
                 </div>
               )}
             </div>
 
             {latestAssistant?.options && latestAssistant.options.length > 0 && !isSending && (
-              <div className="ws-quick-bar" role="group" aria-label="Respuestas sugeridas">
-                {latestAssistant.options.slice(0, 4).map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`ws-chip-btn ${opt.value === "__open_submit__" ? "is-cta" : ""}`}
-                    onClick={() => {
-                      if (opt.value === "__open_submit__") {
-                        setActiveView("submit");
-                        return;
-                      }
-                      if (opt.value === "__open_brief__") {
-                        setActiveView("brief");
-                        return;
-                      }
-                      void handleSendMessage(opt.value, true);
-                    }}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <div className="ws-quick-bar">
+                <QuickReplyPanel
+                  messageId={latestAssistant.id}
+                  options={latestAssistant.options}
+                  selectionMode={latestAssistant.selectionMode}
+                  disabled={isSending}
+                  onSelectValue={(val) => void handleSendMessage(val, true)}
+                  onRequestOther={() => inputRef.current?.focus()}
+                  onSpecialAction={(act) => {
+                    if (act === "__open_submit__") setActiveView("submit");
+                    else if (act === "__open_brief__") setActiveView("brief");
+                  }}
+                />
               </div>
             )}
 
@@ -741,7 +787,7 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
                     : "Tus ediciones manuales en la ficha siempre tienen prioridad."}
                 </span>
                 <button type="submit" className="btn btn-primary" disabled={isSending}>
-                  <span>Enviar</span>
+                  <span>{isSending ? "Steve está pensando…" : "Enviar"}</span>
                   <Send size={15} aria-hidden="true" />
                 </button>
               </div>

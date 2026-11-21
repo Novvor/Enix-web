@@ -6,7 +6,7 @@ import {
   type ProviderInvoker
 } from "@/lib/server/assistant-guard";
 import { resolveRuntimeCoordinator } from "@/lib/server/production-store";
-import type { ProjectBrief } from "@/lib/project/schema";
+import type { CommercialStage, ProjectBrief } from "@/lib/project/schema";
 
 export const prerender = false;
 
@@ -187,6 +187,8 @@ export const POST: APIRoute = async ({ request }) => {
       requestId?: string;
       isSelection?: boolean;
       conversationMode?: "commercial" | "legacy-guided";
+      history?: Array<{ role: "user" | "assistant"; text: string }>;
+      currentCommercialStage?: CommercialStage;
     } | null;
 
     const rawText = typeof body?.message === "string" ? body.message : body?.answer;
@@ -218,6 +220,15 @@ export const POST: APIRoute = async ({ request }) => {
           ? createGeminiInvoker(geminiKey)
           : undefined;
 
+    const safeHistory = Array.isArray(body.history)
+      ? body.history
+          .slice(-6)
+          .filter(
+            (m): m is { role: "user" | "assistant"; text: string } =>
+              Boolean(m && typeof m === "object" && (m.role === "user" || m.role === "assistant") && typeof m.text === "string")
+          )
+      : [];
+
     const result = await handleAssistantTurn({
       sessionId,
       requestId: typeof body.requestId === "string" ? body.requestId : "",
@@ -227,6 +238,8 @@ export const POST: APIRoute = async ({ request }) => {
       pageId: body.pageId,
       isSelection: Boolean(body.isSelection),
       conversationMode: body.conversationMode || "commercial",
+      history: safeHistory,
+      currentCommercialStage: body.currentCommercialStage,
       aiEnabled,
       isProduction: storeResolution.isProduction,
       providerName,

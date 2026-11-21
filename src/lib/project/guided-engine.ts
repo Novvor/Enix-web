@@ -1,13 +1,17 @@
 import {
   CATEGORY_LABELS,
   MARKETING_CATEGORY_SLUGS,
+  computeBriefReadiness,
+  mapCommercialStageToProjectStage,
   type AssistantTurnResponse,
   type BriefPatch,
   type ChatOption,
+  type CommercialStage,
   type ProjectBrief,
   type ProjectStage,
   type ProjectTrack,
   type Requirement,
+  type SelectionMode,
   deriveProvisionalTitle,
   makeRequirement
 } from "./schema.ts";
@@ -58,7 +62,7 @@ const DEV_REGEX =
   /(sitio web|nueva web|p[aá]gina web|web nueva|\bweb\b|app|aplicaci[oó]n|sistema|inventario|pedidos|bodega|portal|plataforma|automatiz|integraci[oó]n|erp|crm|inteligencia artificial|\bia\b|chatbot|software)/i;
 
 const MKT_REGEX =
-  /(marketing|publicidad|campa[nñ]a|anuncios|google ads|meta ads|facebook|instagram|redes sociales|\bseo\b|posicionamiento|b[uú]squedas locales|atraer m[aá]s clientes|conseguir m[aá]s clientes|captar clientes|conseguir m[aá]s reservas|conseguir reservas|estrategia digital|branding|dise[nñ]o de marca|mejorar mi marca|identidad de marca|email marketing|conversi[oó]n|contenido editorial)/i;
+  /(marketing|publicidad|campa[nñ]a|anuncios|google ads|meta ads|facebook|instagram|redes sociales|\bseo\b|posicionamiento|b[uú]squedas locales|atraer m[aá]s clientes|conseguir m[aá]s clientes|quiero m[aá]s clientes|vender m[aá]s|aumentar ventas|captar clientes|conseguir m[aá]s reservas|conseguir reservas|estrategia digital|branding|dise[nñ]o de marca|mejorar mi marca|identidad de marca|email marketing|conversi[oó]n|contenido editorial)/i;
 
 const OFF_TOPIC_OR_INJECTION_REGEX =
   /(ignora (todas )?las instrucciones|ignore previous instructions|act[uú]a como|system prompt|prompt del sistema|instrucciones internas|dame una receta|receta de (cocina|pasta|torta)|escribe un poema|hazme la tarea|traduce este texto|resuelve esta ecuaci[oó]n|cu[aá]ntos habitantes|qui[eé]n gan[oó] el mundial|chiste sobre|jailbreak|dan mode|escribe c[oó]digo python para|finanzas personales|criptomonedas|apuestas)/i;
@@ -116,7 +120,7 @@ export function inferCategoryFromIdea(idea: string, track?: ProjectTrack): strin
     if (/(redes|contenido|editorial|publicaciones)/.test(text)) return "content-social";
     if (/(email|correo|seguimiento|crm)/.test(text)) return "email-crm-automation";
     if (/(anal[ií]tica|conversi[oó]n|medici[oó]n|embudo)/.test(text)) return "analytics-cro";
-    if (/(estrategia|atraer|captar|clientes|reservas)/.test(text)) return "digital-strategy";
+    if (/(estrategia|atraer|captar|clientes|reservas|vender|ventas)/.test(text)) return "digital-strategy";
     return "marketing";
   }
 
@@ -124,7 +128,7 @@ export function inferCategoryFromIdea(idea: string, track?: ProjectTrack): strin
   if (/(quiero|necesito|crear|hacer|dise[nñ]ar|nueva|renovar)\s+(un\s+|una\s+)?(sitio\s+|p[aá]gina\s+)?web\b|sitio web|p[aá]gina web/.test(text)) {
     return "websites";
   }
-  if (/(pedido|inventario|bodega|excel|planilla|gesti[oó]n|erp|stock|despacho|ordenar la operaci|mantenimiento|t[eé]cnicos en terreno)/.test(text)) {
+  if (/(\bcrm\b|pedido|inventario|bodega|excel|planilla|gesti[oó]n|erp|stock|despacho|ordenar la operaci|mantenimiento|t[eé]cnicos en terreno|sistema industrial|industrial|planta|trazabilidad)/.test(text)) {
     return "management-systems";
   }
   if (/(\bia\b|inteligencia artificial|chatbot|asistente de ia|\brag\b|resumir documentos|manuales internos)/.test(text)) {
@@ -139,7 +143,7 @@ export function inferCategoryFromIdea(idea: string, track?: ProjectTrack): strin
   if (/(peluquer[ií]a|barber[ií]a|sal[oó]n|est[eé]tica|cursos|asesor[ií]as|poco profesional)/.test(text)) {
     return "websites";
   }
-  if (/(app|aplicaci[oó]n|celular|m[oó]vil|ios|android|reservar|reserva|agenda)/.test(text)) {
+  if (/(app|aplicaci[oó]n|delivery|reparto|celular|m[oó]vil|ios|android|reservar|reserva|agenda)/.test(text)) {
     return "applications";
   }
   if (/(web|sitio|p[aá]gina|landing|tienda|cat[aá]logo|presencia digital)/.test(text)) {
@@ -923,11 +927,20 @@ export function processGuidedAnswer(
 export function processCommercialTurn(
   brief: ProjectBrief,
   rawMessage: string,
-  options: { pageId?: string; categoryHint?: string | null; isSelection?: boolean } = {}
+  options: {
+    pageId?: string;
+    categoryHint?: string | null;
+    isSelection?: boolean;
+    history?: Array<{ role: "user" | "assistant"; text: string }>;
+    currentCommercialStage?: CommercialStage;
+  } = {}
 ): AssistantTurnResponse {
   const message = rawMessage.trim();
   const low = message.toLowerCase();
   const isSelection = Boolean(options.isSelection);
+  const isFirstTurn = options.history
+    ? options.history.length === 0
+    : !brief.idea.trim() && !brief.goal.trim() && brief.requirements.length === 0;
 
   // 1. Prompt injection or pure off-topic guard
   if (!isSelection && isOffTopicOrAbuse(message)) {
@@ -935,16 +948,18 @@ export function processCommercialTurn(
       mode: "guided",
       expectedRevision: brief.revision,
       interpretation:
-        "Soy el asistente comercial de ENIX Studio y solo puedo ayudarte con proyectos de diseño, desarrollo, sistemas, automatizaciones, IA, marca o marketing digital. No tengo acceso a instrucciones internas ni respondo temas ajenos a estos servicios.",
-      question: "¿Hay algún proyecto digital o necesidad de tu negocio que quieras evaluar juntos?",
+        "Soy Steve, el asesor comercial de ENIX Studio, y solo puedo ayudarte con proyectos digitales (web, apps, sistemas, automatizaciones, IA, marca o marketing). No respondo temas ajenos ni revelo configuración interna.",
+      question: "¿Qué proyecto o mejora para tu negocio te gustaría explorar juntos?",
       reply:
-        "Soy el asistente comercial de ENIX Studio y solo puedo ayudarte con proyectos de diseño, desarrollo, sistemas, automatizaciones, IA, marca o marketing digital. No respondo temas ajenos a estos servicios ni revelo configuración interna.\n\nSi tienes un proyecto o necesidad para tu negocio, cuéntame brevemente qué buscas lograr y te ayudo a aterrizar el mejor punto de partida.",
+        "Soy Steve, el asesor comercial de ENIX Studio, y solo puedo ayudarte con proyectos digitales (web, apps, sistemas, automatizaciones, IA, marca o marketing). No respondo temas ajenos ni revelo configuración interna.\n\n¿Qué proyecto o mejora para tu negocio te gustaría explorar juntos?",
       stage: brief.idea ? "needs" : "idea",
+      commercialStage: "discover",
       stepId: "conversation",
+      selectionMode: "single",
       options: [
-        { id: "ot-web", label: "Evaluar un sitio web", value: "Quiero evaluar un sitio web para mi negocio" },
-        { id: "ot-mkt", label: "Atraer más clientes", value: "Quiero atraer más clientes con marketing digital" },
-        { id: "ot-sys", label: "Ordenar mi operación", value: "Necesito un sistema de gestión para ordenar mi operación" }
+        { id: "ot-web", label: "Crear o renovar una web", value: "Necesito una página web para captar más clientes" },
+        { id: "ot-mkt", label: "Vender más / atraer clientes", value: "Quiero vender más y atraer más clientes" },
+        { id: "ot-sys", label: "Ordenar mi operación o CRM", value: "Quiero ordenar mi operación y clientes con un sistema a medida" }
       ],
       links: [{ label: "Hablar con el equipo", href: "/contact/" }],
       patch: {}
@@ -952,9 +967,12 @@ export function processCommercialTurn(
   }
 
   const isMixed = !isSelection && isMixedOffTopicRequest(message);
+  const isUnsureReply =
+    message === "__unsure__" ||
+    /^(no estoy seguro|no s[eé] todav[ií]a|no estoy seguro,?\s*recomi[eé]ndame|no estoy seguro,?\s*quiero detectarlo)$/i.test(message);
 
   // 2. Infer track, category, audience, and extract structured facts from message
-  const asksUndecidedPro = /(no s[eé].*(necesito|pedir|empezar)|poco profesional|imagen profesional|cursos y asesor[ií]as)/.test(low);
+  const asksUndecidedPro = /(no s[eé].*(necesito|pedir|empezar)|poco profesional|imagen profesional|cursos y asesor[ií]as)/.test(low) && !/(excel|planilla)/.test(low);
   const combinedText = `${brief.idea ? `${brief.idea}. ` : ""}${message}`;
   const rawTrack = asksUndecidedPro
     ? "combined"
@@ -968,10 +986,13 @@ export function processCommercialTurn(
     (brief.category && brief.category !== "undetermined" ? brief.category : null) ||
     (asksUndecidedPro ? "websites" : null) ||
     inferCategoryFromIdea(message, nextTrack) ||
+    inferCategoryFromIdea(combinedText, nextTrack) ||
     options.categoryHint ||
     null;
 
   const patch: BriefPatch = {};
+  const blueprintHighlights: string[] = [];
+
   if (!brief.idea.trim()) {
     patch.title = deriveProvisionalTitle(message, inferredCategory);
     patch.goal = message.slice(0, 480);
@@ -981,6 +1002,7 @@ export function processCommercialTurn(
   }
   if (inferredCategory && (!brief.category || brief.category === "undetermined")) {
     patch.category = inferredCategory;
+    blueprintHighlights.push(`Enfoque: ${CATEGORY_LABELS[inferredCategory] || inferredCategory}`);
   }
   const detectedAudience = inferAudienceFromText(message);
   if (detectedAudience !== "undetermined" && brief.audience === "undetermined") {
@@ -1009,8 +1031,17 @@ export function processCommercialTurn(
   if (/(excel|planilla|planillas|hoja de c[aá]lculo)/.test(low)) {
     patch.currentSituation = patch.currentSituation || "Operación actual gestionada en planillas / Excel.";
   }
-  if (/(whatsapp)/.test(low) && !brief.currentSituation) {
+  if (/(whatsapp)/.test(low) && !brief.currentSituation && !patch.currentSituation) {
     patch.currentSituation = "Actualmente reciben consultas o coordinación por WhatsApp.";
+  }
+  if (/(empresa que ya funciona|negocio en marcha|ya funcionamos)/.test(low) && !brief.currentSituation) {
+    patch.currentSituation = "Empresa en funcionamiento buscando potenciar su presencia digital.";
+    patch.audience = "business";
+  } else if (/(proyecto nuevo|emprendimiento nuevo|rec[ií][eé]n empezando)/.test(low) && !brief.currentSituation) {
+    patch.currentSituation = "Proyecto nuevo en etapa de lanzamiento.";
+    patch.audience = "entrepreneur";
+  } else if (/(renovar.*web|web actual)/.test(low) && !brief.currentSituation) {
+    patch.currentSituation = "Cuenta con sitio web actual que busca renovar para captar más clientes.";
   }
   if (/(paciente|cl[ií]nica|salud|m[eé]dic|historia cl[ií]nica|datos sensibles)/.test(low)) {
     newConstraints.push(
@@ -1032,15 +1063,17 @@ export function processCommercialTurn(
     patch.targetAudienceAndTerritory = `Clientes en ${locMatch[1]}`;
   }
 
-  // Extract existing channels (Instagram, Google Maps, sin web)
-  if (/(solo tenemos instagram|google maps|sin web|no tenemos web|instagram activo)/i.test(low)) {
+  // Extract existing channels (Instagram, Google Maps, recomendaciones, sin web)
+  if (/(solo tenemos instagram|google maps|sin web|no tenemos web|instagram activo|redes sociales|recomendaciones|boca a boca|b[uú]squedas locales|canal constante)/i.test(low)) {
     const channelParts: string[] = [];
-    if (/instagram/i.test(low)) channelParts.push("Instagram activo");
-    if (/google maps/i.test(low)) channelParts.push("ficha en Google Maps");
+    if (/instagram|redes sociales|tiktok/i.test(low)) channelParts.push("Redes sociales / Instagram");
+    if (/google maps|b[uú]squedas locales|google/i.test(low)) channelParts.push("Google / búsquedas locales");
+    if (/recomendaciones|boca a boca/i.test(low)) channelParts.push("Recomendaciones / boca a boca");
     if (/(sin web|no tenemos web)/i.test(low)) channelParts.push("sin sitio web aún");
+    if (/canal constante/i.test(low)) channelParts.push("sin canal digital constante aún");
     if (channelParts.length > 0) {
       patch.existingChannelsAndAssets = channelParts.join(", ");
-      if (!brief.currentSituation) patch.currentSituation = channelParts.join(", ");
+      if (!brief.currentSituation && !patch.currentSituation) patch.currentSituation = channelParts.join(", ");
     }
   }
 
@@ -1051,9 +1084,9 @@ export function processCommercialTurn(
     patch.engagementModality = "ongoing";
   }
 
-  // Extract timeline cleanly (e.g. "en 2 meses", "este mes", "próximo trimestre")
+  // Extract timeline cleanly
   const timeMatch = message.match(
-    /(en\s+\d+\s+(?:mes|meses|semana|semanas)|este\s+mes|pr[oó]ximo\s+(?:mes|trimestre)|lo\s+antes\s+posible|urgente)/i
+    /(en\s+\d+\s+(?:mes|meses|semana|semanas)|en\s+1\s+a\s+2\s+meses|este\s+mes|pr[oó]ximo\s+(?:mes|trimestre)|lo\s+antes\s+posible|urgente|sin\s+fecha\s+fija)/i
   );
   if (timeMatch && (!brief.declaredTimeline || brief.declaredTimeline === "Por definir")) {
     patch.declaredTimeline = timeMatch[1];
@@ -1098,10 +1131,22 @@ export function processCommercialTurn(
           "usr"
         )
       );
-    } else if (/bodega/.test(low)) {
-      newUsers.push(makeRequirement("Equipos de ventas, bodega y administración", "confirmed", "user", "initial", "usr"));
-    } else if (/clientes/.test(low)) {
+    } else if (/(equipo comercial|vendedores|ventas y seguimiento)/.test(low)) {
+      newUsers.push(makeRequirement("Equipo comercial y gestión de ventas", "confirmed", "user", "initial", "usr"));
+    } else if (/(repartidores|locales|restaurantes|delivery)/.test(low)) {
+      newUsers.push(makeRequirement("Clientes finales, despacho y repartidores", "confirmed", "user", "initial", "usr"));
+    } else if (/(planta|operarios|industrial|bodega)/.test(low)) {
+      newUsers.push(makeRequirement("Equipos de operación, planta y supervisión", "confirmed", "user", "initial", "usr"));
+    } else if (/(mis clientes|clientes finales|los clientes\s+(?:reserv|compr|us|entr|pid|ingres))/.test(low)) {
       newUsers.push(makeRequirement("Clientes finales y equipo del negocio", "confirmed", "user", "initial", "usr"));
+    }
+  }
+
+  // Capture user-confirmed priority / capability choices on follow-up turns
+  if (!isFirstTurn && !isUnsureReply && message.length >= 6 && newReqs.length === 0 && !/(c[oó]mo empezamos|cotiz|enviar mi ficha|evaluar con enix|pasemos)/i.test(low)) {
+    const isPureMeta = /(sin fecha|este mes|1 a 2 meses|puntual|mensual|solo tenemos instagram|google maps|empresa que ya funciona|proyecto nuevo)/i.test(low);
+    if (!isPureMeta) {
+      newReqs.push(makeRequirement(message.slice(0, 180), "confirmed", isSelection ? "selection" : "user", "initial", "usrp"));
     }
   }
 
@@ -1112,13 +1157,76 @@ export function processCommercialTurn(
     }
   }
 
-  if (brief.requirements.length === 0 && newReqs.length === 0) {
-    newReqs.push(...getDomainSuggestions(inferredCategory, nextTrack).slice(0, 2));
+  // Domain-tailored suggested capabilities on first turn (clearly marked status: "suggested")
+  const isCrm = /\bcrm\b|clientes y ventas|oportunidades de venta|pipeline/.test(low);
+  const isDelivery = /(delivery|reparto|pedidos a domicilio)/.test(low);
+  const isIndustrial = /(sistema industrial|industrial|planta|trazabilidad)/.test(low) && !/(t[eé]cnicos en terreno|offline|sin conexi[oó]n)/.test(low);
+  const isExcelPain = /(excel|planilla|hoja de c[aá]lculo)/.test(low) && !/(mantenimiento|t[eé]cnicos|terreno)/.test(low);
+  const isAutomation = /(automatiz|tareas repetitivas|procesos manuales)/.test(low);
+  const isAiBiz = /(\bia\b|inteligencia artificial|usar ia)/.test(low) && !/(industrial)/.test(low);
+  const isGenericWeb = /(necesito|quiero|hacer|crear|dise[nñ]ar)\s+(una?\s+)?(p[aá]gina\s+|sitio\s+)?web\b/.test(low) && !/(peluquer|barber|sal[oó]n|cafeter|restaurante)/.test(low);
+  const isSellMore = /(quiero\s+(vender\s+m[aá]s|m[aá]s\s+clientes)|aumentar\s+ventas|atraer\s+m[aá]s\s+clientes|captar\s+clientes)/.test(low) && !/(cafeter|restaurante)/.test(low);
+
+  if (brief.requirements.length === 0) {
+    if (isCrm) {
+      newReqs.push(
+        makeRequirement("Centralización de clientes, historial y embudo comercial", "suggested", "assistant", "initial", "crm"),
+        makeRequirement("Seguimiento automático de oportunidades y cotizaciones", "suggested", "assistant", "initial", "crm"),
+        makeRequirement("Reportes comerciales e integración a evaluar con WhatsApp", "suggested", "assistant", "later", "crm")
+      );
+    } else if (isDelivery) {
+      newReqs.push(
+        makeRequirement("Catálogo móvil y toma de pedidos en tiempo real", "suggested", "assistant", "initial", "del"),
+        makeRequirement("Seguimiento de estado de entrega y panel de despacho", "suggested", "assistant", "initial", "del"),
+        makeRequirement("Pagos en línea y notificaciones automáticas al cliente", "suggested", "assistant", "later", "del")
+      );
+    } else if (isIndustrial) {
+      newReqs.push(
+        makeRequirement("Control centralizado de órdenes de trabajo y trazabilidad", "suggested", "assistant", "initial", "ind"),
+        makeRequirement("Registro operativo en planta o terreno desde móvil", "suggested", "assistant", "initial", "ind"),
+        makeRequirement("Tableros de control y reportes automáticos por turno o cliente", "suggested", "assistant", "later", "ind")
+      );
+    } else if (isExcelPain) {
+      newReqs.push(
+        makeRequirement("Panel centralizado que reemplaza planillas sueltas", "suggested", "assistant", "initial", "exl"),
+        makeRequirement("Carga rápida de datos sin duplicados y permisos por rol", "suggested", "assistant", "initial", "exl"),
+        makeRequirement("Reportes y alertas automáticas en tiempo real", "suggested", "assistant", "later", "exl")
+      );
+    } else if (isAutomation) {
+      newReqs.push(
+        makeRequirement("Automatización de tareas repetitivas entre herramientas", "suggested", "assistant", "initial", "aut"),
+        makeRequirement("Conexión de formularios, correo, WhatsApp o planillas", "suggested", "assistant", "initial", "aut"),
+        makeRequirement("Alertas operativas y reportes automáticos", "suggested", "assistant", "later", "aut")
+      );
+    } else if (isAiBiz) {
+      newReqs.push(
+        makeRequirement("Asistente inteligente para atender o calificar consultas", "suggested", "assistant", "initial", "ai"),
+        makeRequirement("Clasificación o resumen automático de solicitudes y documentos", "suggested", "assistant", "initial", "ai"),
+        makeRequirement("Reglas de control humano y privacidad sobre tus datos", "suggested", "assistant", "initial", "ai")
+      );
+    } else if (newReqs.length === 0) {
+      newReqs.push(...getDomainSuggestions(inferredCategory, nextTrack).slice(0, 3));
+    }
   }
-  if (newReqs.length > 0) patch.addRequirements = newReqs;
-  if (newInts.length > 0) patch.addIntegrations = newInts;
-  if (newUsers.length > 0) patch.addUsers = newUsers;
+
+  if (newReqs.length > 0) {
+    patch.addRequirements = newReqs;
+    const confirmedCount = newReqs.filter((r) => r.status === "confirmed").length;
+    const suggestedCount = newReqs.filter((r) => r.status === "suggested").length;
+    if (confirmedCount > 0) blueprintHighlights.push(`+${confirmedCount} prioridad${confirmedCount > 1 ? "es" : ""} confirmada${confirmedCount > 1 ? "s" : ""}`);
+    if (suggestedCount > 0) blueprintHighlights.push(`+${suggestedCount} posibilidades propuestas`);
+  }
+  if (newInts.length > 0) {
+    patch.addIntegrations = newInts;
+    blueprintHighlights.push(`+${newInts.length} integración${newInts.length > 1 ? "es" : ""}`);
+  }
+  if (newUsers.length > 0) {
+    patch.addUsers = newUsers;
+    blueprintHighlights.push("Usuarios definidos");
+  }
   if (newConstraints.length > 0) patch.addConstraints = newConstraints;
+  if (patch.declaredTimeline) blueprintHighlights.push(`Plazo: ${patch.declaredTimeline}`);
+  if (patch.targetAudienceAndTerritory) blueprintHighlights.push(patch.targetAudienceAndTerritory);
 
   // Compute effective state after this turn to avoid repeating answered questions
   const effectiveUsersCount = brief.users.length + newUsers.length;
@@ -1127,199 +1235,392 @@ export function processCommercialTurn(
   const effectiveChannels = patch.existingChannelsAndAssets || brief.existingChannelsAndAssets;
   const effectiveModality = patch.engagementModality || brief.engagementModality;
   const effectiveTimeline = patch.declaredTimeline || brief.declaredTimeline;
+  const effectiveConfirmedCount =
+    brief.requirements.filter((r) => r.status === "confirmed").length +
+    newReqs.filter((r) => r.status === "confirmed").length;
 
-  // 3. Craft direct, consultative answer FIRST (60–140 words target)
+  // Estimate readiness after patch
+  const previewBrief: ProjectBrief = {
+    ...brief,
+    track: nextTrack,
+    category: patch.category !== undefined ? patch.category : brief.category,
+    idea: brief.idea || message,
+    goal: patch.goal || brief.goal,
+    currentSituation: effectiveSituation,
+    targetAudienceAndTerritory: effectiveTerritory,
+    existingChannelsAndAssets: effectiveChannels,
+    engagementModality: effectiveModality,
+    declaredTimeline: effectiveTimeline,
+    users: [...brief.users, ...newUsers],
+    requirements: [...brief.requirements, ...newReqs]
+  };
+  const readiness = computeBriefReadiness(previewBrief);
+
+  // 3. Craft concise, value-first consultative response (2-3 short sentences + 1 sharp question)
   const links: { label: string; href: string }[] = [];
   let answerParagraph = "";
   let followUp = "";
   let quickOptions: ChatOption[] = [];
+  let selectionMode: SelectionMode = "single";
+  let commercialStage: CommercialStage = "possibilities";
 
-  const asksToQuoteOrStart = /(c[oó]mo empezamos|quiero que me cotice|cotizar con el equipo|enviar mi ficha|listo para enviar|hablar con el equipo|pasemos a cotizar)/i.test(low);
+  const asksToQuoteOrStart = /(c[oó]mo empezamos|quiero que me cotice|cotizar con el equipo|enviar mi ficha|listo para enviar|hablar con el equipo|pasemos a cotizar|solicitar evaluaci[oó]n)/i.test(low);
   const asksPrice = /(cu[aá]nto (cuesta|me saldr[ií]a|sale|vale)|precio|valor|tarifa|presupuesto|descuento|cotiz)/.test(low);
   const asksDiscountOrGuarantee = /(descuento|garantiza|garant[ií]a de ventas|primer lugar en google|roas garantizado)/.test(low);
   const asksHealth = /(paciente|cl[ií]nica|salud|m[eé]dic|ficha cl[ií]nica)/.test(low);
   const asksSalonBooking = /(peluquer[ií]a|barber[ií]a|sal[oó]n|est[eé]tica)/.test(low) && /(whatsapp|reserva|hora|agenda|empezar|recomiend|saldr[ií]a)/.test(low);
   const asksCafeAds = /(cafeter[ií]a|restaurante|local)/.test(low) && /(instagram|anuncios|publicidad|meta|ads|300|350|pauta)/.test(low);
   const asksFieldMaintenance = /(mantenimiento|t[eé]cnicos|terreno)/.test(low) && /(offline|sin conexi[oó]n|sin se[nñ]al|excel|planilla|orden)/.test(low);
-  const asksWhatToStart = /(qu[eé] recomiendas|por d[oó]nde empezar|c[oó]mo empezar|qu[eé] conviene|app o web|necesito una app)/.test(low);
 
   const mixedPrefix = isMixed
-    ? "En temas ajenos a ENIX Studio (como recetas o tareas generales) no puedo ayudarte, pero sí con tu proyecto digital. "
+    ? "En temas ajenos a ENIX Studio no puedo ayudarte, pero sí con tu proyecto digital. "
     : "";
 
   if (asksDiscountOrGuarantee) {
     answerParagraph =
-      `${mixedPrefix}No puedo aprobar descuentos ni prometer ventas, retornos o posiciones garantizadas en Google: eso depende de tu mercado, tu oferta y el alcance real que evaluamos junto al equipo de ENIX Studio. Lo que sí podemos hacer es definir una primera versión acotada y transparente, con entregables claros e indicadores acordados para medir avances reales.`;
-    followUp = "¿Qué resultado concreto necesitas priorizar primero para que preparemos una evaluación realista?";
+      `${mixedPrefix}No puedo aprobar descuentos ni prometer ventas, retornos o posiciones garantizadas en Google: eso depende de tu mercado y del alcance real que evaluamos junto al equipo de ENIX Studio. Lo que sí podemos hacer es diseñar una primera versión clara, medible y proporcionada.`;
+    followUp = "¿Qué resultado concreto quieres priorizar primero para armar una evaluación realista?";
+    commercialStage = "priorities";
+    quickOptions = [
+      { id: "dg-1", label: "Captar más consultas reales", value: "Priorizar captación de consultas calificadas" },
+      { id: "dg-2", label: "Ordenar y automatizar mi proceso", value: "Priorizar orden operativo y automatización" },
+      { id: "dg-3", label: "Evaluar alcance con el equipo", value: "Quiero que me cotice el equipo", kind: "primary" }
+    ];
     links.push({ label: "Hablar con el equipo", href: "/contact/" });
   } else if (asksToQuoteOrStart) {
     answerParagraph =
-      `${mixedPrefix}¡Perfecto! Ya tienes una ficha clara con lo esencial de tu proyecto. El siguiente paso es enviársela al equipo de ENIX Studio (desde la pestaña «Evaluar con ENIX» arriba) para que revisemos tu alcance real y te respondamos con una propuesta concreta de etapas, plazos e inversión.`;
-    followUp = "¿Quieres revisar o ajustar algún detalle en «Mi ficha» antes de enviarla, o pasamos directo a «Evaluar con ENIX»?";
+      `${mixedPrefix}¡Perfecto! Tu proyecto ya tiene una base clara en la ficha (${readiness.defined.slice(0, 3).join(", ")}). Al enviarla desde «Evaluar con ENIX», el equipo revisará tu alcance real para proponerte etapas, plazos e inversión concretos.`;
+    followUp = "¿Quieres revisar algún detalle en «Mi ficha» o pasamos directo a «Evaluar con ENIX»?";
+    commercialStage = "evaluation";
     quickOptions = [
-      { id: "go-submit", label: "Pasar directo a Evaluar con ENIX →", value: "__open_submit__" },
+      { id: "go-submit", label: "Ir a Evaluar con ENIX →", value: "__open_submit__", kind: "primary" },
       { id: "go-brief", label: "Revisar mi ficha primero", value: "__open_brief__" }
+    ];
+  } else if (isUnsureReply) {
+    const catLabel = inferredCategory && CATEGORY_LABELS[inferredCategory]
+      ? CATEGORY_LABELS[inferredCategory].toLowerCase()
+      : "tu proyecto";
+    answerParagraph =
+      `¡No hay problema, para eso estamos! 💡 Para avanzar con ${catLabel} sin complicarnos, lo más efectivo suele ser elegir un único cuello de botella actual y lanzar una primera versión liviana que puedas validar rápido.`;
+    followUp = "¿Cuál de estos caminos se acerca más a lo que te gustaría ver funcionando primero?";
+    commercialStage = "priorities";
+    quickOptions = [
+      { id: "un-1", label: "Atraer y convertir más clientes", value: "Quiero priorizar atraer y convertir más clientes" },
+      { id: "un-2", label: "Ahorrar tiempo y ordenar procesos", value: "Quiero priorizar ahorrar tiempo y ordenar procesos internos" },
+      { id: "un-3", label: "Lanzar una primera versión rápida", value: "Quiero lanzar una primera versión rápida y escalar después" },
+      { id: "un-other", label: "Otro enfoque", value: "__other__", kind: "other" }
     ];
   } else if (asksHealth) {
     answerParagraph =
-      `${mixedPrefix}Para una aplicación de salud con datos de pacientes conviene partir por un flujo acotado (por ejemplo agenda, ficha básica y permisos por rol) y revisar desde el inicio los requisitos de privacidad, control de acceso y normativa aplicable junto al equipo de ENIX Studio. No asumimos certificaciones médicas previas sin validar el alcance técnico y legal real.`;
-    followUp = "¿Qué acción principal deben resolver primero tus profesionales o pacientes en esta primera versión?";
+      `${mixedPrefix}En salud podemos partir por una primera versión enfocada en agenda, ficha básica y permisos por rol, revisando desde el día uno privacidad y normativa aplicable con el equipo de ENIX Studio; no asumimos certificaciones previas sin validar el alcance real.`;
+    followUp = "¿Qué acción principal deben resolver primero tus profesionales o pacientes?";
+    commercialStage = "priorities";
+    selectionMode = "multi";
+    quickOptions = [
+      { id: "hl-1", label: "Agenda y recordatorios", value: "Agenda online y recordatorios para pacientes" },
+      { id: "hl-2", label: "Ficha y seguimiento por rol", value: "Ficha de seguimiento con control de permisos por rol" },
+      { id: "hl-3", label: "Portal de pacientes", value: "Portal para que pacientes vean sus citas o indicaciones" },
+      { id: "hl-other", label: "Otro flujo", value: "__other__", kind: "other" }
+    ];
     links.push(
       { label: "Explorar aplicaciones", href: "/solutions/applications/" },
       { label: "Hablar con el equipo", href: "/contact/" }
     );
   } else if (asksUndecidedPro) {
     answerParagraph =
-      `${mixedPrefix}Es súper común cuando vendes cursos y asesorías solo desde Instagram: antes de gastar en anuncios, el salto que más confianza genera suele ser ordenar tu imagen de marca y lanzar una web clara donde tus clientes vean qué ofreces, tu metodología y puedan inscribirse o agendar sin idas y vueltas por DM.`;
-    followUp = "¿Te gustaría empezar por una web profesional con agenda/inscripción, renovar primero tu marca o ambos en un plan acotado?";
+      `${mixedPrefix}Es súper común cuando vendes cursos y asesorías solo desde Instagram. ✨ Podemos ordenar tu marca y lanzar una web clara donde muestres tu propuesta y tus clientes puedan inscribirse o agendar sin idas y vueltas por DM.`;
+    followUp = "¿Te gustaría partir por la web con agenda/inscripción, renovar tu marca o ambos en una primera etapa?";
+    commercialStage = "possibilities";
+    quickOptions = [
+      { id: "up-1", label: "Web profesional con agenda", value: "Quiero empezar por una web profesional con agenda o inscripción" },
+      { id: "up-2", label: "Marca + web en un plan acotado", value: "Quiero ordenar mi marca y lanzar una web clara en una primera etapa" },
+      { id: "up-3", label: "No estoy seguro, recomiéndame", value: "__unsure__", kind: "unsure" }
+    ];
     links.push(
       { label: "Explorar sitios web", href: "/solutions/websites/" },
       { label: "Branding y marca", href: "/marketing/brand-design/" }
     );
-    quickOptions = [
-      { id: "up-1", label: "Web profesional con agenda o inscripción", value: "Quiero empezar por una web profesional donde puedan agendar o inscribirse a mis cursos" },
-      { id: "up-2", label: "Marca + web en un plan acotado", value: "Quiero ordenar mi marca y lanzar una web clara en una primera etapa acotada" },
-      { id: "up-3", label: "Quiero cotizar con el equipo", value: "Quiero que me cotice el equipo" }
-    ];
-  } else if (asksSalonBooking) {
+  } else if (asksSalonBooking && isFirstTurn) {
     const priceNote = asksPrice
-      ? " No te doy un número cerrado al aire porque la inversión depende de si sumamos pagos/abonos y cuántas agendas manejan, pero al definir esto aquí el equipo de ENIX puede cotizártelo con precisión."
+      ? " La inversión exacta la cotizamos según si sumamos abonos y cantidad de agendas."
       : "";
     answerParagraph =
-      `${mixedPrefix}Para empezar sin sobredimensionar, lo más práctico suele ser un sitio web rápido enfocado en móvil con catálogo de servicios, precios referenciales y agenda de reservas en línea con confirmación automática (por correo o aviso a WhatsApp), en lugar de construir una app compleja desde el día uno.${priceNote}`;
+      `${mixedPrefix}Podemos crear un sitio web rápido pensado para móvil con tu catálogo de servicios y agenda de reservas online con confirmación automática por correo o aviso a WhatsApp, sin complicarte con una app pesada desde el inicio.${priceNote}`;
     followUp = "¿Atienden con una sola agenda o varios profesionales con horarios distintos?";
+    commercialStage = "possibilities";
+    quickOptions = [
+      { id: "sb-1", label: "Varios profesionales y horarios", value: "Atendemos con varios profesionales y horarios distintos" },
+      { id: "sb-2", label: "Una sola agenda principal", value: "Usamos una sola agenda principal para los servicios" },
+      { id: "sb-3", label: "Sumar pagos o abonos online", value: "Quiero sumar reservas con abono online" },
+      { id: "sb-other", label: "Otro detalle", value: "__other__", kind: "other" }
+    ];
     links.push(
       { label: "Ver demo de reservas", href: "/demos/bookings/" },
       { label: "Explorar sitios web", href: "/solutions/websites/" }
     );
-    quickOptions = [
-      { id: "sb-1", label: "Varios profesionales con horarios", value: "Atendemos con varios profesionales y horarios distintos" },
-      { id: "sb-2", label: "Una sola agenda principal", value: "Usamos una sola agenda principal para los servicios" },
-      { id: "sb-3", label: "Quiero sumar clientes nuevos también", value: "Además de reservas quiero atraer clientes nuevos con marketing" }
-    ];
-  } else if (asksCafeAds) {
+  } else if (asksCafeAds && isFirstTurn) {
     answerParagraph =
-      `${mixedPrefix}Cuando ya probaste anuncios sin retorno, casi siempre falla el destino o el mensaje, no el canal. Con un presupuesto mensual acotado para anuncios en Instagram conviene enfocar la pauta en tu zona local con una oferta concreta y un destino claro (ficha local, carta o reserva). Recuerda que la inversión publicitaria se paga directo a Meta y siempre se separa de los honorarios de gestión y creatividad de ENIX Studio; tampoco prometemos retornos cerrados sin validar primero tu punto de partida.`;
+      `${mixedPrefix}Con un presupuesto mensual acotado en Instagram conviene enfocar la pauta en tu zona local con una oferta concreta y un destino claro (carta, reserva o ficha local). Recuerda que la pauta se paga directo a Meta y siempre va separada de los honorarios de ENIX, sin prometer retornos cerrados.`;
     followUp = effectiveTerritory
-      ? `Ya anoté que operas en ${effectiveTerritory.replace(/^Clientes en /i, "")}. ¿Hoy cuentan con sitio web o solo Instagram y Google Maps para recibir esas visitas?`
-      : "¿En qué comuna o ciudad estás y ya cuentan con sitio web o ficha en Google Maps para recibir esas visitas?";
-    links.push(
-      { label: "Explorar publicidad digital", href: "/marketing/digital-advertising/" },
-      { label: "SEO y presencia local", href: "/marketing/seo-local/" }
-    );
+      ? `Ya anoté que operas en ${effectiveTerritory.replace(/^Clientes en /i, "")}. ¿Hoy tienen sitio web o solo Instagram y Google Maps?`
+      : "¿En qué comuna o ciudad estás y hoy cuentan con web o solo Instagram y Google Maps?";
+    commercialStage = "possibilities";
     quickOptions = [
-      { id: "ca-1", label: "Solo tenemos Instagram por ahora", value: "Hoy solo tenemos Instagram activo y sin sitio web" },
-      { id: "ca-2", label: "Tenemos Instagram y Google Maps", value: "Tenemos Instagram y ficha en Google Maps, sin web optimizada" },
+      { id: "ca-1", label: "Solo Instagram por ahora", value: "Hoy solo tenemos Instagram activo y sin sitio web" },
+      { id: "ca-2", label: "Instagram + Google Maps", value: "Tenemos Instagram y ficha en Google Maps, sin web optimizada" },
       { id: "ca-3", label: "Queremos web simple + campañas", value: "Queremos una web simple o carta digital junto con las campañas" }
     ];
-  } else if (asksFieldMaintenance) {
+    links.push(
+      { label: "Publicidad digital", href: "/marketing/digital-advertising/" },
+      { label: "SEO y presencia local", href: "/marketing/seo-local/" }
+    );
+  } else if (asksFieldMaintenance && isFirstTurn) {
     const alreadyHasCount = /\d+\s+t[eé]cnicos/i.test(message);
     answerParagraph =
-      `${mixedPrefix}Cuando tus técnicos trabajan en terreno con mala señal y todo termina en Excel, una buena primera versión es una aplicación web móvil con captura offline (órdenes, fotos y firma que se sincronizan al recuperar señal) conectada a un tablero central para despacho y facturación. Así reemplazas planillas por etapas sin frenar la operación diaria.`;
+      `${mixedPrefix}Podemos reemplazar esas planillas con una app web móvil de captura offline para tus técnicos (órdenes, fotos y firma que sincronizan al recuperar señal) conectada a un tablero central de despacho y reportes.`;
     followUp = alreadyHasCount
-      ? "Ya registré tu equipo en terreno en la ficha. ¿Tienen algún plazo objetivo o herramientas clave (como correo, ERP o reportes PDF) que debamos conectar desde la primera versión?"
-      : "¿Cuántas personas trabajan en terreno y qué datos mínimos debe registrar cada orden de trabajo?";
-    links.push(
-      { label: "Ver demo de pedidos y operación", href: "/demos/order-management/" },
-      { label: "Explorar sistemas de gestión", href: "/solutions/management-systems/" }
-    );
+      ? "Ya anoté tu equipo en terreno. ¿Qué necesitas conectar o priorizar primero (reportes PDF, correo/ERP o plazo)?"
+      : "¿Cuántos técnicos trabajan en terreno y qué dato es indispensable en cada orden?";
+    commercialStage = "possibilities";
+    selectionMode = "multi";
     quickOptions = [
-      { id: "fm-1", label: "Plazo 1–2 meses + reportes PDF", value: "Lo necesitamos en 2 meses con reportes PDF por cliente" },
-      { id: "fm-2", label: "Conectar con correo o ERP", value: "Necesitamos conectar con correo y nuestro sistema actual" },
-      { id: "fm-3", label: "Quiero evaluar alcance con el equipo", value: "Quiero que me cotice el equipo" }
+      { id: "fm-1", label: "Reportes PDF automáticos", value: "Necesitamos reportes PDF automáticos por cliente" },
+      { id: "fm-2", label: "Conectar con correo o ERP", value: "Queremos evaluar conexión con correo o ERP actual" },
+      { id: "fm-3", label: "Plazo 1–2 meses", value: "Lo necesitamos en 1 a 2 meses" },
+      { id: "fm-other", label: "Otro requisito", value: "__other__", kind: "other" }
     ];
+    links.push(
+      { label: "Ver demo de operación", href: "/demos/order-management/" },
+      { label: "Sistemas de gestión", href: "/solutions/management-systems/" }
+    );
+  } else if (isCrm && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}¡Podemos crear algo muy potente! 🚀 Un CRM a medida que centralice tus clientes, automatice seguimientos y te ayude a no perder oportunidades de venta. También podríamos evaluar conectarlo con WhatsApp, cotizaciones y reportes.`;
+    followUp = "¿Qué necesitas mejorar primero?";
+    commercialStage = "possibilities";
+    selectionMode = "multi";
+    quickOptions = [
+      { id: "crm-1", label: "Clientes y ventas", value: "Priorizar gestión de clientes y pipeline de ventas" },
+      { id: "crm-2", label: "Automatizaciones", value: "Priorizar automatizaciones de seguimiento y avisos" },
+      { id: "crm-3", label: "Equipo comercial", value: "Priorizar coordinación y metas del equipo comercial" },
+      { id: "crm-4", label: "Todo lo anterior", value: "Queremos integrar clientes, automatizaciones y equipo comercial" },
+      { id: "crm-other", label: "Otro", value: "__other__", kind: "other" }
+    ];
+    links.push(
+      { label: "Sistemas de gestión", href: "/solutions/management-systems/" },
+      { label: "Automatizaciones", href: "/solutions/automations/" }
+    );
+  } else if (isDelivery && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}¡Gran oportunidad! 🚀 Podemos crear una app de delivery con catálogo en vivo, seguimiento de pedidos en tiempo real y panel de despacho. También podríamos evaluar pagos en línea y avisos automáticos al cliente.`;
+    followUp = "¿Es para repartir pedidos de tu propio negocio o para conectar varios locales?";
+    commercialStage = "possibilities";
+    quickOptions = [
+      { id: "del-1", label: "Solo mi negocio / local", value: "Es para repartir pedidos de mi propio negocio" },
+      { id: "del-2", label: "Varios locales o restaurantes", value: "Es una plataforma para conectar varios locales y repartidores" },
+      { id: "del-3", label: "Con repartidores propios", value: "Incluye gestión de repartidores propios y seguimiento" },
+      { id: "del-unsure", label: "No estoy seguro", value: "__unsure__", kind: "unsure" }
+    ];
+    links.push(
+      { label: "Explorar aplicaciones", href: "/solutions/applications/" },
+      { label: "Demo de pedidos", href: "/demos/order-management/" }
+    );
+  } else if (isIndustrial && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}Podemos diseñar un sistema industrial a medida para controlar órdenes, trazabilidad y mantenimiento en tiempo real sin depender de papeles ni planillas sueltas. ⚙️ También podríamos sumar operación móvil en planta o terreno y reportes automáticos.`;
+    followUp = "¿Qué proceso industrial necesitas ordenar primero?";
+    commercialStage = "possibilities";
+    selectionMode = "multi";
+    quickOptions = [
+      { id: "ind-1", label: "Órdenes y mantenimiento", value: "Ordenar órdenes de trabajo y mantenimiento preventivo" },
+      { id: "ind-2", label: "Producción y trazabilidad", value: "Control de producción, inventario y trazabilidad" },
+      { id: "ind-3", label: "Operación móvil en planta", value: "Registro móvil en planta o terreno con reportes" },
+      { id: "ind-other", label: "Otro proceso", value: "__other__", kind: "other" }
+    ];
+    links.push(
+      { label: "Sistemas de gestión", href: "/solutions/management-systems/" },
+      { label: "Demo de operación", href: "/demos/order-management/" }
+    );
+  } else if (isExcelPain && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}Es exactamente donde más valor podemos darte. 💡 En vez de seguir perdiendo horas en Excel, podemos transformar ese flujo en un sistema simple donde tu equipo cargue datos en segundos, todo quede centralizado y los reportes salgan solos.`;
+    followUp = "¿Qué proceso llevas hoy en Excel que te quita más tiempo?";
+    commercialStage = "possibilities";
+    selectionMode = "multi";
+    quickOptions = [
+      { id: "ex-1", label: "Clientes, cotizaciones y ventas", value: "Llevamos clientes, cotizaciones y ventas en Excel" },
+      { id: "ex-2", label: "Pedidos, stock o despachos", value: "Llevamos pedidos, inventario o despachos en Excel" },
+      { id: "ex-3", label: "Equipo, horas o cobros", value: "Llevamos control de equipo, horas o cobros en Excel" },
+      { id: "ex-other", label: "Otro proceso", value: "__other__", kind: "other" }
+    ];
+    links.push(
+      { label: "Sistemas de gestión", href: "/solutions/management-systems/" },
+      { label: "Ver demo de pedidos", href: "/demos/order-management/" }
+    );
+  } else if (isAutomation && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}¡Ahí suele haber un salto enorme en tiempo y orden! ⚡ Podemos automatizar tareas repetitivas conectando tus formularios, correos, WhatsApp o planillas para que los datos fluyan solos y con menos errores.`;
+    followUp = "¿En qué área pierden más horas manuales hoy?";
+    commercialStage = "possibilities";
+    selectionMode = "multi";
+    quickOptions = [
+      { id: "au-1", label: "Ventas y seguimiento", value: "Perdemos tiempo en seguimiento manual de leads y cotizaciones" },
+      { id: "au-2", label: "Pedidos y operación", value: "Perdemos tiempo pasando pedidos o datos entre planillas" },
+      { id: "au-3", label: "Reportes y administración", value: "Perdemos tiempo armando reportes, cobros o avisos" },
+      { id: "au-unsure", label: "No estoy seguro", value: "__unsure__", kind: "unsure" }
+    ];
+    links.push(
+      { label: "Ver demo de automatización", href: "/demos/automation/" },
+      { label: "Automatizaciones", href: "/solutions/automations/" }
+    );
+  } else if (isAiBiz && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}¡La IA bien aplicada ahorra horas reales desde el día uno! ✨ Podemos implementarla para atender y calificar consultas, clasificar documentos o automatizar reportes internos sobre tus propios procesos, siempre con control humano.`;
+    followUp = "¿Dónde te generaría más impacto aplicar IA primero?";
+    commercialStage = "possibilities";
+    selectionMode = "multi";
+    quickOptions = [
+      { id: "ai-1", label: "Atender y calificar clientes", value: "Quiero usar IA para atender y calificar consultas de clientes" },
+      { id: "ai-2", label: "Procesar documentos o datos", value: "Quiero usar IA para resumir o clasificar documentos internos" },
+      { id: "ai-3", label: "Automatizar soporte interno", value: "Quiero usar IA para soporte o respuestas repetitivas" },
+      { id: "ai-unsure", label: "No estoy seguro", value: "__unsure__", kind: "unsure" }
+    ];
+    links.push({ label: "Soluciones de IA", href: "/solutions/ai-solutions/" });
+  } else if (isGenericWeb && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}Podemos diseñar un sitio web que no solo se vea increíble, sino que te ayude a captar clientes. ✨ Según tu negocio, podríamos incorporar reservas, ventas online o un catálogo interactivo.`;
+    followUp = "¿Es para una empresa que ya funciona o un proyecto nuevo?";
+    commercialStage = "possibilities";
+    quickOptions = [
+      { id: "wb-1", label: "Empresa que ya funciona", value: "Es para una empresa que ya funciona" },
+      { id: "wb-2", label: "Proyecto nuevo", value: "Es para un proyecto nuevo" },
+      { id: "wb-3", label: "Renovar una web actual", value: "Quiero renovar nuestra web actual" },
+      { id: "wb-unsure", label: "No estoy seguro", value: "__unsure__", kind: "unsure" }
+    ];
+    links.push({ label: "Explorar sitios web", href: "/solutions/websites/" });
+  } else if (isSellMore && isFirstTurn) {
+    answerParagraph =
+      `${mixedPrefix}¡Vamos a trabajar en eso! 🚀 Podemos combinar campañas, contenido y páginas de captación para atraer personas realmente interesadas en tu negocio (siempre separando inversión en anuncios de honorarios, sin promesas mágicas).`;
+    followUp = "¿Hoy consigues más clientes por redes sociales, Google o recomendaciones?";
+    commercialStage = "possibilities";
+    selectionMode = "multi";
+    quickOptions = [
+      { id: "sm-1", label: "Redes sociales", value: "Hoy conseguimos más clientes por redes sociales" },
+      { id: "sm-2", label: "Google / búsquedas", value: "Hoy conseguimos más clientes por Google o búsquedas locales" },
+      { id: "sm-3", label: "Recomendaciones", value: "Hoy dependemos principalmente de recomendaciones" },
+      { id: "sm-4", label: "Sin canal constante aún", value: "Aún no tenemos un canal constante de captación" }
+    ];
+    links.push(
+      { label: "Marketing digital", href: "/marketing/" },
+      { label: "Publicidad digital", href: "/marketing/digital-advertising/" }
+    );
   } else if (asksPrice) {
     answerParagraph =
-      `${mixedPrefix}No damos precios cerrados a ciegas porque la inversión depende del alcance real: cantidad de flujos, diseño, integraciones y si incluye acompañamiento de marketing (donde la pauta en anuncios siempre va separada de los honorarios). Si ordenamos aquí lo esencial de tu primera versión, el equipo de ENIX Studio puede prepararte una evaluación concreta sin sorpresas.`;
-    followUp = "¿Qué es lo mínimo que necesitas tener funcionando primero para cotizarlo con claridad?";
+      `${mixedPrefix}La inversión depende del alcance real (flujos, integraciones y si suma marketing, donde la pauta siempre va separada de los honorarios), así que no tiramos números al aire. Si cerramos aquí qué va en la primera versión, el equipo te prepara una cotización clara.`;
+    followUp = "¿Qué es lo más urgente que necesitas tener funcionando primero?";
+    commercialStage = "priorities";
+    quickOptions = [
+      { id: "pr-1", label: "Primera versión rápida y acotada", value: "Quiero priorizar una primera versión rápida y acotada" },
+      { id: "pr-2", label: "Solución completa por etapas", value: "Quiero planificar una solución completa dividida en etapas" },
+      { id: "pr-3", label: "Evaluar con el equipo", value: "Quiero que me cotice el equipo", kind: "primary" }
+    ];
     links.push({ label: "Cómo trabajamos", href: "/how-we-work/" });
-  } else if (asksWhatToStart) {
-    const isMkt = nextTrack === "marketing" || nextTrack === "combined";
-    answerParagraph = isMkt
-      ? `${mixedPrefix}Para empezar con buen criterio, conviene alinear primero el objetivo comercial (consultas, reservas o ventas), revisar si tu web o destino actual convierte bien y luego activar los canales más pertinentes sin dispersar presupuesto.`
-      : `${mixedPrefix}Para empezar sin sobredimensionar, solemos separar una primera versión enfocada en el flujo principal que resuelve el problema hoy, dejando funciones secundarias para una segunda etapa. Así validas rápido y mantienes una base escalable.`;
-    followUp = "¿Qué problema concreto del día a día te gustaría resolver primero?";
-  } else if (nextTrack === "combined") {
+  } else if ((readiness.defined.length >= 5 || (readiness.defined.length >= 4 && Boolean(effectiveTimeline))) && !isFirstTurn) {
+    // Stage 5 / 6: Attractive summary + clean invitation to evaluate
+    const topDefined = readiness.defined.slice(0, 4).join(" · ");
     answerParagraph =
-      `${mixedPrefix}¡Excelente! Ya actualicé tu ficha integrada de desarrollo y marketing digital con este contexto${effectiveChannels ? ` (${effectiveChannels})` : ""}${effectiveModality && effectiveModality !== "undecided" ? " y modalidad puntual inicial para validar" : ""}. Trabajar ambos frentes juntos evita lanzar campañas sin un destino que convierta.`;
-    if (!effectiveTerritory) {
-      followUp = "¿En qué ciudad o territorio operas principalmente?";
-    } else if (!effectiveTimeline) {
-      followUp = "Con esto ya tenemos una base muy sólida. ¿Tienes una fecha ideal de lanzamiento o pasamos a «Evaluar con ENIX» para que el equipo prepare una propuesta?";
-      quickOptions = [
-        { id: "c-go", label: "Pasar a Evaluar con ENIX →", value: "__open_submit__" },
-        { id: "c-t1", label: "Empezar este mes", value: "Me gustaría empezar este mes" },
-        { id: "c-t2", label: "En 1 a 2 meses", value: "Idealmente en 1 a 2 meses" }
-      ];
-    } else {
-      followUp = "¡Tu ficha ya tiene todo lo necesario para una primera evaluación! ¿Quieres revisarla en «Mi ficha» o enviársela al equipo?";
-      quickOptions = [
-        { id: "c-go2", label: "Ir a Evaluar con ENIX →", value: "__open_submit__" },
-        { id: "c-br2", label: "Revisar mi ficha", value: "__open_brief__" }
-      ];
-    }
-    links.push(
-      { label: "Sitios web", href: "/solutions/websites/" },
-      { label: "Marketing digital", href: "/marketing/" }
-    );
-  } else if (nextTrack === "marketing") {
+      `${mixedPrefix}¡Tu proyecto ya está tomando una forma súper clara! ✨ En tu ficha ya registramos: ${topDefined}. Con esta base el equipo de ENIX puede evaluar alcance, etapas e inversión real sin hacerte repetir nada.`;
+    followUp = "¿Quieres sumar algún requisito extra o pasamos a «Evaluar con ENIX»?";
+    commercialStage = effectiveTimeline ? "evaluation" : "summary";
+    quickOptions = [
+      { id: "sum-go", label: "Solicitar evaluación con ENIX →", value: "__open_submit__", kind: "primary" },
+      { id: "sum-brief", label: "Revisar mi ficha", value: "__open_brief__" },
+      { id: "sum-other", label: "Agregar otro detalle", value: "__other__", kind: "other" }
+    ];
+  } else if (nextTrack === "marketing" || nextTrack === "combined") {
     const catName = inferredCategory && CATEGORY_LABELS[inferredCategory]
       ? CATEGORY_LABELS[inferredCategory].toLowerCase()
       : "marketing digital";
     answerParagraph =
-      `${mixedPrefix}Buen punto de partida para trabajar ${catName}. Para recomendarte un enfoque realista (sin prometer resultados cerrados y separando siempre inversión en anuncios de honorarios), ya anoté estos datos en tu ficha.`;
+      `${mixedPrefix}¡Buen avance! Ya actualicé tu ficha de ${catName}${effectiveChannels ? ` (${effectiveChannels})` : ""}. Así enfocamos esfuerzos donde mejor convierte, separando siempre pauta en anuncios de honorarios.`;
+
     if (!effectiveTerritory) {
-      followUp = "¿En qué ciudad o territorio operas y qué canales digitales (web, Instagram, Google) tienes activos hoy?";
-    } else if (!effectiveModality || effectiveModality === "undecided") {
-      followUp = "¿Buscas un trabajo puntual de lanzamiento o un acompañamiento periódico mensual?";
+      followUp = "¿En qué ciudad o territorio quieres captar clientes principalmente?";
+      commercialStage = "priorities";
       quickOptions = [
-        { id: "m-1", label: "Trabajo puntual primero", value: "Busco un trabajo puntual primero para probar" },
-        { id: "m-2", label: "Acompañamiento mensual", value: "Busco un acompañamiento periódico mensual" }
+        { id: "mk-loc1", label: "En mi ciudad / comuna local", value: "Clientes en Santiago y alrededores" },
+        { id: "mk-loc2", label: "Todo el país (online)", value: "Clientes en todo Chile de forma online" },
+        { id: "mk-loc3", label: "Varios países / Latam", value: "Clientes en Latam" },
+        { id: "mk-other", label: "Otro territorio", value: "__other__", kind: "other" }
+      ];
+    } else if (!effectiveModality || effectiveModality === "undecided") {
+      followUp = "¿Prefieres partir con un proyecto puntual para validar o acompañamiento mensual?";
+      commercialStage = "scope";
+      quickOptions = [
+        { id: "mk-m1", label: "Proyecto puntual para probar", value: "Prefiero un trabajo puntual primero para probar" },
+        { id: "mk-m2", label: "Acompañamiento mensual", value: "Busco un acompañamiento periódico mensual" },
+        { id: "mk-m3", label: "No estoy seguro", value: "__unsure__", kind: "unsure" }
       ];
     } else {
-      followUp = "Ya tienes una ficha clara de marketing. ¿Quieres enviársela al equipo en «Evaluar con ENIX» o agregar algún detalle más?";
+      followUp = "¡Ya tenemos una base sólida! ¿Quieres revisar tu ficha o solicitar una evaluación con ENIX?";
+      commercialStage = "summary";
       quickOptions = [
-        { id: "m-go", label: "Ir a Evaluar con ENIX →", value: "__open_submit__" },
-        { id: "m-br", label: "Revisar mi ficha", value: "__open_brief__" }
+        { id: "mk-go", label: "Evaluar con ENIX →", value: "__open_submit__", kind: "primary" },
+        { id: "mk-br", label: "Ver mi ficha", value: "__open_brief__" }
       ];
     }
-    if (inferredCategory && inferredCategory !== "marketing") {
+    if (inferredCategory && inferredCategory !== "marketing" && MARKETING_CATEGORY_SLUGS.has(inferredCategory)) {
       links.push({ label: `Ver ${CATEGORY_LABELS[inferredCategory]}`, href: `/marketing/${inferredCategory}/` });
     }
   } else {
+    // Follow-up development turns: sharp, contextual, never repetitive
     const catName = inferredCategory && CATEGORY_LABELS[inferredCategory]
       ? CATEGORY_LABELS[inferredCategory].toLowerCase()
       : "tu proyecto digital";
-    const capturedHighlights: string[] = [];
-    if (newReqs.length > 0) capturedHighlights.push(newReqs[0].text.toLowerCase());
-    if (newInts.length > 0) capturedHighlights.push(newInts[0].text.toLowerCase());
-    if (patch.declaredTimeline) capturedHighlights.push(`plazo ${patch.declaredTimeline}`);
 
-    const summaryClause =
-      capturedHighlights.length > 0
-        ? ` Sumé ${capturedHighlights.join(", ")} en tu ficha.`
-        : " Ya actualicé tu ficha con este contexto.";
-
-    answerParagraph = `${mixedPrefix}Perfecto, seguimos afinando ${catName}.${summaryClause}`;
-
-    if (effectiveUsersCount === 0) {
-      followUp = "¿Quiénes usarán principalmente esta solución y qué acción clave deben completar?";
-    } else if (!effectiveSituation) {
-      followUp = "¿Cómo resuelven hoy este proceso y qué es lo que más les frena actualmente?";
-    } else if (!effectiveTimeline) {
-      followUp = "Con esto ya tenemos el alcance base bastante claro. ¿Tienes alguna fecha ideal de lanzamiento o prefieres pasar ya a evaluar con el equipo?";
+    if (effectiveConfirmedCount === 0 && !isFirstTurn) {
+      answerParagraph =
+        `${mixedPrefix}¡Anotado! Eso le da mucha claridad a ${catName}. Para que la primera versión genere impacto rápido sin inflar el alcance, elijamos las piezas clave.`;
+      followUp = "¿Qué capacidades te gustaría incluir sí o sí en la primera etapa?";
+      commercialStage = "priorities";
+      selectionMode = "multi";
       quickOptions = [
-        { id: "d-t1", label: "En 1 a 2 meses", value: "Lo ideal sería lanzarlo en 1 a 2 meses" },
-        { id: "d-t2", label: "Sin fecha cerrada, evaluando", value: "Sin fecha fija, quiero evaluar alcance e inversión" },
-        { id: "d-go", label: "Ir a Evaluar con ENIX →", value: "__open_submit__" }
+        { id: "dv-c1", label: "Panel de gestión y reportes", value: "Incluir panel de gestión y reportes claros" },
+        { id: "dv-c2", label: "Reservas, pedidos o pagos", value: "Incluir reservas, pedidos o pagos en línea" },
+        { id: "dv-c3", label: "Conexión con WhatsApp o correo", value: "Evaluar integración con WhatsApp o correo" },
+        { id: "dv-other", label: "Otras funciones", value: "__other__", kind: "other" }
+      ];
+    } else if (effectiveUsersCount === 0) {
+      answerParagraph =
+        `${mixedPrefix}¡Excelente foco para ${catName}! Ya sumé esa prioridad a tu ficha para que vaya tomando forma.`;
+      followUp = "¿Quiénes lo van a usar día a día (tu equipo interno, clientes finales o ambos)?";
+      commercialStage = "scope";
+      quickOptions = [
+        { id: "dv-u1", label: "Solo mi equipo interno", value: "Lo usará principalmente nuestro equipo interno" },
+        { id: "dv-u2", label: "Mis clientes finales", value: "Lo usarán directamente nuestros clientes" },
+        { id: "dv-u3", label: "Ambos (clientes + equipo)", value: "Lo usarán clientes finales y nuestro equipo interno" }
+      ];
+    } else if (!effectiveTimeline) {
+      answerParagraph =
+        `${mixedPrefix}¡Perfecto! Tu ficha de ${catName} ya tiene claro el objetivo, prioridades y usuarios. Solo nos falta encuadrar tiempos para que el equipo proponga etapas realistas.`;
+      followUp = "¿Tienes una ventana ideal de lanzamiento o prefieres pasar ya a evaluar con ENIX?";
+      commercialStage = "scope";
+      quickOptions = [
+        { id: "dv-t1", label: "Lo antes posible (1–2 meses)", value: "Idealmente lanzarlo en 1 a 2 meses" },
+        { id: "dv-t2", label: "Sin fecha fija, evaluando", value: "Sin fecha fija, quiero evaluar alcance e inversión" },
+        { id: "dv-go", label: "Ir a Evaluar con ENIX →", value: "__open_submit__", kind: "primary" }
       ];
     } else {
-      followUp = "¡Excelente! Ya tienes una ficha muy completa (objetivo, usuarios, alcance y plazo). Puedes revisarla en «Mi ficha» o enviársela directo al equipo para recibir una evaluación concreta.";
+      answerParagraph =
+        `${mixedPrefix}¡Listo! Ya tienes un Project Blueprint muy completo para ${catName} con objetivo, prioridades, usuarios y plazo.`;
+      followUp = "¿Quieres revisar tu ficha o enviársela directo al equipo para recibir una propuesta?";
+      commercialStage = "evaluation";
       quickOptions = [
-        { id: "d-go2", label: "Ir a Evaluar con ENIX →", value: "__open_submit__" },
-        { id: "d-br2", label: "Revisar mi ficha", value: "__open_brief__" }
+        { id: "dv-go2", label: "Solicitar evaluación con ENIX →", value: "__open_submit__", kind: "primary" },
+        { id: "dv-br2", label: "Revisar mi ficha", value: "__open_brief__" }
       ];
     }
+
     if (inferredCategory && ["websites", "applications", "management-systems", "platforms", "automations", "ai-solutions"].includes(inferredCategory)) {
       links.push({ label: `Explorar ${CATEGORY_LABELS[inferredCategory]}`, href: `/solutions/${inferredCategory}/` });
     }
@@ -1328,10 +1629,25 @@ export function processCommercialTurn(
   // Always offer contextual demo link when highly relevant
   if (/(reserva|agenda|cita|hora)/.test(low) && !links.some((l) => l.href === "/demos/bookings/")) {
     links.push({ label: "Probar demo de reservas", href: "/demos/bookings/" });
-  } else if (/(pedido|bodega|despacho|inventario|orden)/.test(low) && !links.some((l) => l.href === "/demos/order-management/")) {
+  } else if (/(pedido|bodega|despacho|inventario|orden|delivery)/.test(low) && !links.some((l) => l.href === "/demos/order-management/")) {
     links.push({ label: "Probar demo de operación", href: "/demos/order-management/" });
   } else if (/(automatiz|clasific|formulario)/.test(low) && !links.some((l) => l.href === "/demos/automation/")) {
     links.push({ label: "Probar demo de automatización", href: "/demos/automation/" });
+  }
+
+  // Prevent ever repeating the exact same follow-up question from the previous assistant turn
+  const prevAssistantText =
+    options.history && options.history.length > 0
+      ? [...options.history].reverse().find((m) => m.role === "assistant")?.text || ""
+      : "";
+  if (followUp && prevAssistantText.includes(followUp)) {
+    commercialStage = "summary";
+    followUp = "¿Quieres revisar cómo quedó tu ficha o enviársela al equipo en «Evaluar con ENIX»?";
+    quickOptions = [
+      { id: "nr-go", label: "Solicitar evaluación con ENIX →", value: "__open_submit__", kind: "primary" },
+      { id: "nr-br", label: "Revisar mi ficha", value: "__open_brief__" },
+      { id: "nr-ot", label: "Agregar otro detalle", value: "__other__", kind: "other" }
+    ];
   }
 
   const replyText = `${answerParagraph}\n\n${followUp}`.trim();
@@ -1342,8 +1658,11 @@ export function processCommercialTurn(
     interpretation: answerParagraph,
     question: followUp,
     reply: replyText,
-    stage: brief.requirements.length > 1 ? "priorities" : "needs",
+    stage: mapCommercialStageToProjectStage(commercialStage),
+    commercialStage,
     stepId: "conversation",
+    selectionMode,
+    blueprintHighlights: blueprintHighlights.slice(0, 3),
     options: quickOptions,
     links: links.slice(0, 3),
     patch

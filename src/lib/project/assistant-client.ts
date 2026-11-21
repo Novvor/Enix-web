@@ -95,6 +95,11 @@ export async function sendCommercialMessage(params: {
   let turn: AssistantTurnResponse | null = null;
   let recoverableError: string | undefined;
 
+  const recentHistory = (params.currentDraft.messages || []).slice(-6).map((m) => ({
+    role: m.role,
+    text: m.text.slice(0, 300)
+  }));
+
   try {
     const res = await fetch("/api/project-assistant/", {
       method: "POST",
@@ -107,7 +112,9 @@ export async function sendCommercialMessage(params: {
         answer: cleanText,
         brief: workingBrief,
         isSelection: Boolean(params.isSelection),
-        conversationMode: "commercial"
+        conversationMode: "commercial",
+        history: recentHistory,
+        currentCommercialStage: params.currentDraft.commercialStage || "discover"
       })
     });
 
@@ -127,8 +134,11 @@ export async function sendCommercialMessage(params: {
             ? data.reply
             : [data.interpretation, data.question].filter(Boolean).join("\n\n"),
         stage: data.stage || "needs",
+        commercialStage: data.commercialStage || "possibilities",
         stepId: data.stepId || "conversation",
         options: Array.isArray(data.options) ? data.options : [],
+        selectionMode: data.selectionMode === "multi" ? "multi" : "single",
+        blueprintHighlights: Array.isArray(data.blueprintHighlights) ? data.blueprintHighlights : [],
         links: Array.isArray(data.links) ? data.links : [],
         patch: data.patch || {},
         requestId,
@@ -165,7 +175,9 @@ export async function sendCommercialMessage(params: {
     turn = processCommercialTurn(workingBrief, cleanText, {
       pageId: safePageId,
       categoryHint: params.categoryHint ?? pageCtx.categoryHint,
-      isSelection: Boolean(params.isSelection)
+      isSelection: Boolean(params.isSelection),
+      history: recentHistory,
+      currentCommercialStage: params.currentDraft.commercialStage || "discover"
     });
     turn.requestId = requestId;
   }
@@ -189,10 +201,13 @@ export async function sendCommercialMessage(params: {
     id: makeMessageId("ast"),
     role: "assistant",
     stage: turn.stage,
+    commercialStage: turn.commercialStage,
     stepId: turn.stepId,
     text: turn.reply || [turn.interpretation, turn.question].filter(Boolean).join("\n\n"),
     interpretation: turn.interpretation,
     options: turn.options,
+    selectionMode: turn.selectionMode || "single",
+    blueprintHighlights: turn.blueprintHighlights || [],
     links: turn.links,
     mode: turn.mode,
     requestId,
@@ -208,6 +223,7 @@ export async function sendCommercialMessage(params: {
     savedAt: new Date().toISOString(),
     expiresAt: params.currentDraft.expiresAt,
     stage: turn.stage,
+    commercialStage: turn.commercialStage || params.currentDraft.commercialStage || "possibilities",
     currentStepIndex: params.currentDraft.currentStepIndex,
     brief: finalBrief,
     messages: [...baseMessages, userMsg, assistantMsg],

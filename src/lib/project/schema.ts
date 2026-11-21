@@ -2,6 +2,14 @@ export type RequirementStatus = "confirmed" | "suggested" | "pending";
 export type RequirementOrigin = "user" | "selection" | "assistant" | "manual-edit";
 export type RequirementPriority = "initial" | "later" | "undecided";
 export type ProjectStage = "idea" | "needs" | "priorities" | "summary";
+export type CommercialStage =
+  | "discover"
+  | "possibilities"
+  | "priorities"
+  | "scope"
+  | "summary"
+  | "evaluation";
+export type SelectionMode = "single" | "multi";
 export type ProjectAudience = "entrepreneur" | "business" | "undetermined";
 export type ProjectTrack = "development" | "marketing" | "combined";
 export type EngagementModality = "one-time" | "ongoing" | "one-time-then-ongoing" | "undecided";
@@ -49,7 +57,8 @@ export interface ChatOption {
   id: string;
   label: string;
   value: string;
-  kind?: "primary" | "neutral";
+  kind?: "primary" | "neutral" | "other" | "unsure";
+  description?: string;
 }
 
 export interface ChatLink {
@@ -61,10 +70,13 @@ export interface ChatMessage {
   id: string;
   role: "assistant" | "user";
   stage: ProjectStage;
+  commercialStage?: CommercialStage;
   stepId?: string;
   text: string;
   interpretation?: string;
   options?: ChatOption[];
+  selectionMode?: SelectionMode;
+  blueprintHighlights?: string[];
   links?: ChatLink[];
   mode?: "ai" | "guided";
   requestId?: string;
@@ -105,8 +117,11 @@ export interface AssistantTurnResponse {
   question: string;
   reply?: string;
   stage: ProjectStage;
+  commercialStage?: CommercialStage;
   stepId: string;
   options: ChatOption[];
+  selectionMode?: SelectionMode;
+  blueprintHighlights?: string[];
   links?: ChatLink[];
   patch: BriefPatch;
   requestId?: string;
@@ -118,6 +133,7 @@ export interface ProjectDraft {
   savedAt: string;
   expiresAt: string;
   stage: ProjectStage;
+  commercialStage?: CommercialStage;
   currentStepIndex: number;
   brief: ProjectBrief;
   messages: ChatMessage[];
@@ -237,6 +253,39 @@ export const STAGE_LABELS: Record<ProjectStage, string> = {
   priorities: "Prioridades",
   summary: "Resumen"
 };
+
+export const COMMERCIAL_STAGE_ORDER: CommercialStage[] = [
+  "discover",
+  "possibilities",
+  "priorities",
+  "scope",
+  "summary",
+  "evaluation"
+];
+
+export const COMMERCIAL_STAGE_LABELS: Record<CommercialStage, string> = {
+  discover: "Descubrir idea",
+  possibilities: "Posibilidades",
+  priorities: "Prioridades",
+  scope: "Alcance",
+  summary: "Resumen",
+  evaluation: "Evaluación"
+};
+
+export function mapCommercialStageToProjectStage(stage: CommercialStage): ProjectStage {
+  switch (stage) {
+    case "discover":
+      return "idea";
+    case "possibilities":
+      return "needs";
+    case "priorities":
+    case "scope":
+      return "priorities";
+    case "summary":
+    case "evaluation":
+      return "summary";
+  }
+}
 
 export const STATUS_LABELS: Record<RequirementStatus, string> = {
   confirmed: "Confirmado",
