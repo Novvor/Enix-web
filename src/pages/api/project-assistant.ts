@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import {
   LIMITS,
+  PROMPT_VERSION,
   handleAssistantTurn,
   resolveOrCreateSession,
   type ProviderInvoker
@@ -50,7 +51,7 @@ function isAiEnabledByEnv(): boolean {
 }
 
 function createOpenAiInvoker(apiKey: string): ProviderInvoker {
-  return async ({ systemPrompt, userPayload, model, maxTokens, signal }) => {
+  return async ({ messages, model, maxTokens, temperature, signal }) => {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       signal,
@@ -61,12 +62,9 @@ function createOpenAiInvoker(apiKey: string): ProviderInvoker {
       body: JSON.stringify({
         model,
         response_format: { type: "json_object" },
-        temperature: 0.35,
+        temperature,
         max_tokens: maxTokens,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPayload }
-        ]
+        messages
       })
     });
 
@@ -154,10 +152,18 @@ export const GET: APIRoute = async ({ request }) => {
   );
   const { setCookieHeader } = resolveOrCreateSession(request, sessionSecret);
 
+  const activeModel = openAiKey
+    ? String(import.meta.env.OPENAI_MODEL || process.env.OPENAI_MODEL || "gpt-4.1-mini").trim()
+    : geminiKey
+      ? String(import.meta.env.GEMINI_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash").trim()
+      : null;
+
   return json(
     {
       assistantMode: canRunAi ? "ai" : "guided",
       aiProvider: canRunAi ? (openAiKey ? "openai" : "gemini") : null,
+      aiModel: canRunAi ? activeModel : null,
+      promptVersion: PROMPT_VERSION,
       sharedStoreReady: storeResolution.sharedStoreConfigured,
       submissionConnected: hasMail,
       maxMessageChars: LIMITS.maxMessageChars
@@ -211,7 +217,7 @@ export const POST: APIRoute = async ({ request }) => {
     const providerName = openAiKey ? "openai" : geminiKey ? "gemini" : null;
     const model =
       providerName === "openai"
-        ? String(import.meta.env.OPENAI_MODEL || process.env.OPENAI_MODEL || "gpt-4o-mini").trim()
+        ? String(import.meta.env.OPENAI_MODEL || process.env.OPENAI_MODEL || "gpt-4.1-mini").trim()
         : String(import.meta.env.GEMINI_MODEL || process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
 
     const providerInvoker =

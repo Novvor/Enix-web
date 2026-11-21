@@ -179,8 +179,8 @@ test("Riesgo 3: Recreación de instancia conserva consumo acumulado y bloquea ex
   const counter = { calls: 0 };
   const provider = makeMockProvider(counter, 10);
 
-  // Instance 1 consumes 1 turn (worst-case ~506, reconciled actual ~134) under daily cap 600
-  const inst1 = new SqliteCoordinatorStore(dbPath, { dailyBudgetMicrocents: 600 });
+  // Instance 1 consumes 1 turn (worst-case ~611, reconciled actual ~134) under daily cap 700
+  const inst1 = new SqliteCoordinatorStore(dbPath, { dailyBudgetMicrocents: 700 });
   try {
     const r1 = await handleAssistantTurn({
       sessionId: "sess-persist-1",
@@ -357,8 +357,8 @@ test("Riesgo 5: Almacenamiento indisponible o sin configurar en producción → 
 
 test("Riesgo 6: Nuevas sesiones sujetas al mismo presupuesto global compartido entre instancias", async () => {
   const dbPath = makeTempDbPath("global-sessions");
-  const instA = new SqliteCoordinatorStore(dbPath, { dailyBudgetMicrocents: 600 });
-  const instB = new SqliteCoordinatorStore(dbPath, { dailyBudgetMicrocents: 600 });
+  const instA = new SqliteCoordinatorStore(dbPath, { dailyBudgetMicrocents: 700 });
+  const instB = new SqliteCoordinatorStore(dbPath, { dailyBudgetMicrocents: 700 });
   const counter = { calls: 0 };
   const provider = makeMockProvider(counter, 10);
 
