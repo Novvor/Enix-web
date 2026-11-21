@@ -70,7 +70,7 @@ export default defineConfig({
     "/estudio": { status: 301, destination: "/studio/" },
     "/contacto": { status: 301, destination: "/contact/" },
     "/nosotros": { status: 301, destination: "/studio/" },
-    "/casos": { status: 301, destination: "/demos/" },
+    "/politica-de-privacidad": { status: 301, destination: "/privacy/" },
     "/diagnostico": { status: 301, destination: "/create-project/" },
     "/our-services": { status: 301, destination: "/solutions/" },
     "/servicios": { status: 301, destination: "/solutions/" },

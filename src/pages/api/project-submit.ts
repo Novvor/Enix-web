@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { briefToPlainText } from "@/lib/project/export";
 import type { ProjectBrief } from "@/lib/project/schema";
+import { getRedisClient } from "@/lib/redis";
 import { siteConfig } from "@/content/site";
 
 export const prerender = false;
@@ -8,6 +9,24 @@ export const prerender = false;
 const RESEND_API_URL = "https://api.resend.com/emails";
 const idempotencyCache = new Map<string, { referenceId: string; createdAt: number }>();
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+const ALLOWED_ORIGINS = [
+  "https://www.enix.studio",
+  "https://enix.studio",
+  "http://localhost:4321",
+  "http://localhost:4322",
+  "http://127.0.0.1:4322"
+];
+
+function isAllowedOrigin(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/^https:\/\/enix-[a-z0-9-]+-danifronters-projects\.vercel\.app$/.test(origin)) {
+    return true;
+  }
+  return false;
+}
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -39,7 +58,18 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
-function isRateLimited(ip: string): boolean {
+async function checkSubmitRateLimit(ip: string): Promise<boolean> {
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const key = `enix:submit:rate:${ip}`;
+      const count = await redis.incr(key);
+      if (count === 1) await redis.expire(key, 60);
+      return count > 5;
+    } catch {
+      // Fall through to local memory guard if Redis temporarily fails
+    }
+  }
   const now = Date.now();
   const record = rateLimitMap.get(ip);
   if (!record || now > record.resetAt) {
@@ -47,17 +77,50 @@ function isRateLimited(ip: string): boolean {
     return false;
   }
   record.count += 1;
-  return record.count > 6;
+  return record.count > 5;
+}
+
+async function getIdempotentReference(key: string): Promise<string | null> {
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      const val = await redis.get<string>(`enix:submit:idem:${key}`);
+      if (typeof val === "string" && val) return val;
+    } catch {
+      // fall through
+    }
+  }
+  const existing = idempotencyCache.get(key);
+  if (existing && Date.now() - existing.createdAt < 30 * 60_000) {
+    return existing.referenceId;
+  }
+  return null;
+}
+
+async function saveIdempotentReference(key: string, referenceId: string): Promise<void> {
+  idempotencyCache.set(key, { referenceId, createdAt: Date.now() });
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await redis.set(`enix:submit:idem:${key}`, referenceId, { ex: 1800 });
+    } catch {
+      // non-fatal
+    }
+  }
 }
 
 export const POST: APIRoute = async ({ request }) => {
   try {
+    if (!isAllowedOrigin(request)) {
+      return json({ ok: false, code: "forbidden_origin", message: "Origen no autorizado." }, 403);
+    }
+
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       request.headers.get("x-real-ip") ||
       "local";
 
-    if (isRateLimited(ip)) {
+    if (await checkSubmitRateLimit(ip)) {
       return json(
         {
           ok: false,
@@ -105,22 +168,29 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: false, code: "invalid_email", message: "Ingresa un correo electrónico válido." }, 400);
     }
 
-    // Idempotency protection: prevent duplicate sends on double-click or retry
+    // Distributed idempotency protection: prevent duplicate sends on double-click or retry
     if (idempotencyKey) {
-      const existing = idempotencyCache.get(idempotencyKey);
-      if (existing && Date.now() - existing.createdAt < 30 * 60_000) {
+      const existingRef = await getIdempotentReference(idempotencyKey);
+      if (existingRef) {
         return json({
           ok: true,
           deduplicated: true,
-          referenceId: existing.referenceId,
-          message: "Esta solicitud ya fue recibida anteriormente."
+          referenceId: existingRef,
+          deliveryStatus: "accepted_by_mail_provider",
+          message: `Esta solicitud ya fue recibida anteriormente (referencia ${existingRef}).`
         });
       }
     }
 
-    const resendApiKey = String(import.meta.env.RESEND_API_KEY || "").trim();
-    const toEmail = String(import.meta.env.CONTACT_TO_EMAIL || siteConfig.contactEmail).trim();
-    const fromEmail = String(import.meta.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev").trim();
+    const resendApiKey = String(
+      import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY || ""
+    ).trim();
+    const toEmail = String(
+      import.meta.env.CONTACT_TO_EMAIL || process.env.CONTACT_TO_EMAIL || siteConfig.contactEmail
+    ).trim();
+    const fromEmail = String(
+      import.meta.env.CONTACT_FROM_EMAIL || process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev"
+    ).trim();
 
     if (!resendApiKey) {
       return json(
@@ -128,7 +198,7 @@ export const POST: APIRoute = async ({ request }) => {
           ok: false,
           code: "missing_mail_config",
           message:
-            "La recepción directa requiere configurar RESEND_API_KEY en el servidor. Puedes descargar tu resumen o abrirlo en tu correo."
+            "El canal de envío directo no está disponible en este entorno. Puedes descargar tu ficha o escribirnos a hello@enix.studio."
         },
         503
       );
@@ -137,7 +207,7 @@ export const POST: APIRoute = async ({ request }) => {
     const referenceId = `ENIX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
     const summaryText = body.brief ? briefToPlainText(body.brief) : notes;
 
-    const html = `
+    const internalHtml = `
       <div style="font-family:Inter,Arial,sans-serif;background:#FAF8F6;padding:24px;color:#301B3C;">
         <div style="max-width:640px;margin:0 auto;background:#FFFFFF;border:1px solid rgba(48,27,60,0.12);border-radius:16px;padding:28px;">
           <p style="font-size:12px;color:#B92F0E;font-weight:700;text-transform:uppercase;margin:0 0 8px;">Referencia ${escapeHtml(referenceId)}</p>
@@ -163,7 +233,7 @@ export const POST: APIRoute = async ({ request }) => {
         to: [toEmail],
         reply_to: email,
         subject: `[ENIX Studio] Ficha ${referenceId} — ${name}`,
-        html
+        html: internalHtml
       })
     });
 
@@ -182,7 +252,45 @@ export const POST: APIRoute = async ({ request }) => {
     const providerMessageId = typeof resendData?.id === "string" ? resendData.id : null;
 
     if (idempotencyKey) {
-      idempotencyCache.set(idempotencyKey, { referenceId, createdAt: Date.now() });
+      await saveIdempotentReference(idempotencyKey, referenceId);
+    }
+
+    // Non-blocking visitor confirmation receipt when sending from a verified domain
+    let confirmationSent = false;
+    if (!fromEmail.toLowerCase().includes("resend.dev")) {
+      try {
+        const receiptHtml = `
+          <div style="font-family:Inter,Arial,sans-serif;background:#FAF8F6;padding:24px;color:#301B3C;">
+            <div style="max-width:600px;margin:0 auto;background:#FFFFFF;border:1px solid rgba(48,27,60,0.12);border-radius:16px;padding:28px;">
+              <p style="font-size:12px;color:#B92F0E;font-weight:700;text-transform:uppercase;margin:0 0 8px;">ENIX Studio · Referencia ${escapeHtml(referenceId)}</p>
+              <h1 style="font-size:20px;margin:0 0 12px;">Recibimos tu solicitud, ${escapeHtml(name)}</h1>
+              <p style="font-size:14px;line-height:1.6;color:#5D5164;margin:0 0 16px;">
+                Nuestro equipo revisará el detalle de tu proyecto para responderte con una evaluación clara de alcance y próximos pasos.
+              </p>
+              <p style="font-size:13px;color:#65596C;margin:0;">
+                Si necesitas agregar información adicional, puedes responder directamente a este correo o escribir a <a href="mailto:${escapeHtml(siteConfig.contactEmail)}" style="color:#B92F0E;font-weight:700;">${escapeHtml(siteConfig.contactEmail)}</a> indicando la referencia <strong>${escapeHtml(referenceId)}</strong>.
+              </p>
+            </div>
+          </div>
+        `;
+        const receiptRes = await fetch(RESEND_API_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [email],
+            reply_to: toEmail,
+            subject: `Recibimos tu solicitud en ENIX Studio (${referenceId})`,
+            html: receiptHtml
+          })
+        });
+        confirmationSent = receiptRes.ok;
+      } catch {
+        confirmationSent = false;
+      }
     }
 
     return json({
@@ -190,7 +298,10 @@ export const POST: APIRoute = async ({ request }) => {
       referenceId,
       deliveryStatus: "accepted_by_mail_provider",
       providerMessageId,
-      message: `Tu ficha fue enviada al servicio de correo para el equipo de ENIX Studio (referencia ${referenceId}). Conserva una copia o descarga tu ficha si deseas respaldo local.`
+      confirmationSent,
+      message: confirmationSent
+        ? `Recibimos tu solicitud (referencia ${referenceId}) y enviamos un acuse a tu correo. El equipo de ENIX Studio revisará tu proyecto y te responderá pronto.`
+        : `Tu solicitud fue recibida para el equipo de ENIX Studio (referencia ${referenceId}). Conserva este código o descarga tu ficha como respaldo.`
     });
   } catch {
     return json(

@@ -306,7 +306,7 @@ export default function ContextualAssistant({
                 placeholder={
                   messages.length > 0
                     ? "Continuar con Steve…"
-                    : "Pregúntale a Steve, asesor de ENIX…"
+                    : "Pregúntale a Steve…"
                 }
                 value={barText}
                 onChange={(e) => setBarText(e.target.value)}

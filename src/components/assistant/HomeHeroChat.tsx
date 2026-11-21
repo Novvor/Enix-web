@@ -408,7 +408,7 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
             placeholder={
               hasConversation
                 ? "Responde aquí, cambia de tema o pregúntanos lo que necesites…"
-                : "Cuéntame qué negocio tienes o qué te gustaría lograr. Ej: «Tengo una peluquería y recibo reservas por WhatsApp, ¿qué recomiendas para empezar?»"
+                : "Cuéntame qué negocio tienes o qué quieres lograr. Ej: «Quiero un CRM» o «Web con reservas»."
             }
             value={inputText}
             onFocus={triggerGreetingOnce}

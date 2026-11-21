@@ -456,10 +456,10 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
           <div className="studio-topbar-left">
             <a href="/" className="ws-brand-link" aria-label="Volver a la portada de ENIX Studio">
               <img
-                src="/brand/enix-logo.png"
+                src="/brand/enix-logo-320.webp"
                 alt="ENIX Studio"
-                width="1578"
-                height="447"
+                width="320"
+                height="91"
                 className="ws-brand-logo"
               />
             </a>

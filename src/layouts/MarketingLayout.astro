@@ -52,7 +52,9 @@ const {
     <main id="contenido">
       <slot />
     </main>
-    <ContextualAssistant client:idle currentPath={Astro.url.pathname} hasRiveAsset={hasRiveAsset} />
+    {!Astro.url.pathname.startsWith("/contact") && (
+      <ContextualAssistant client:idle currentPath={Astro.url.pathname} hasRiveAsset={hasRiveAsset} />
+    )}
     <SiteFooter />
   </body>
 </html>

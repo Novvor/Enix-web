@@ -200,6 +200,7 @@ import { siteConfig } from "@/content/site";
   const form = document.querySelector<HTMLFormElement>("[data-contact-form]");
   const feedback = document.querySelector<HTMLElement>("[data-contact-feedback]");
   const submitBtn = document.querySelector<HTMLButtonElement>("[data-contact-submit]");
+  let currentIdempotencyKey = `contact-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -232,7 +233,7 @@ import { siteConfig } from "@/content/site";
           company,
           notes,
           honeypot,
-          idempotencyKey: `contact-${Date.now()}`
+          idempotencyKey: currentIdempotencyKey
         })
       });
       const data = await res.json().catch(() => null);
@@ -241,9 +242,10 @@ import { siteConfig } from "@/content/site";
         feedback.textContent = data.message;
         feedback.hidden = false;
         form.reset();
+        currentIdempotencyKey = `contact-${crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
       } else if (data?.code === "missing_mail_config") {
         feedback.classList.remove("is-ok");
-        feedback.innerHTML = `La recepción directa requiere configurar <code>RESEND_API_KEY</code> en el servidor. Mientras tanto puedes escribirnos directamente a <a href="mailto:hello@enix.studio?subject=${encodeURIComponent(`Consulta ENIX Studio — ${name}`)}&body=${encodeURIComponent(notes)}" style="text-decoration:underline;font-weight:700;">hello@enix.studio</a>.`;
+        feedback.innerHTML = `El canal directo no está disponible en este momento. Puedes escribirnos a <a href="mailto:hello@enix.studio?subject=${encodeURIComponent(`Consulta ENIX Studio — ${name}`)}&body=${encodeURIComponent(notes)}" style="text-decoration:underline;font-weight:700;">hello@enix.studio</a>.`;
         feedback.hidden = false;
       } else {
         feedback.classList.remove("is-ok");

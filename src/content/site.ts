@@ -175,7 +175,7 @@ export const homeFaqs: FaqItem[] = [
     id: "despues-de-definir",
     question: "¿Qué ocurre después de definir mi proyecto en el asistente?",
     answer:
-      "Obtienes una ficha editable con lo confirmado, las sugerencias opcionales y las decisiones pendientes. Puedes descargarla en Markdown o texto, guardarla como PDF o enviarla al equipo cuando la recepción esté conectada. El equipo de ENIX revisa tu ficha para evaluar el alcance y proponerte una conversación o propuesta concreta."
+      "Obtienes una ficha editable con lo confirmado, las sugerencias opcionales y las decisiones pendientes. Puedes descargarla en Markdown o texto, guardarla como PDF o enviarla directamente al equipo de ENIX desde el asistente para revisar el alcance y proponerte una evaluación concreta."
   },
   {
     id: "asistente-vs-equipo",
