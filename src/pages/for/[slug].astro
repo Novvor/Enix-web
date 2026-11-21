@@ -44,29 +44,32 @@ const other = audiencePaths.find((a) => a.slug !== audience.slug)!;
 
       <div class="aud-grid">
         <article class="aud-card">
+          <span class="aud-kicker">¿Te suena familiar?</span>
           <h2 class="heading-md">Situaciones frecuentes</h2>
           <ul class="aud-list">
-            {audience.situations.map((s) => (
+            {audience.situations.slice(0, 3).map((s) => (
               <li>{s}</li>
             ))}
           </ul>
         </article>
 
-        <article class="aud-card">
-          <h2 class="heading-md">Ejemplos de lo que construimos</h2>
-          <ul class="aud-list">
-            {audience.examples.map((ex) => (
-              <li>{ex}</li>
+        <article class="aud-card is-dark">
+          <span class="aud-kicker is-peach">Soluciones concretas</span>
+          <h2 class="heading-md" style="color:#ffffff;">Qué solemos construir</h2>
+          <ul class="aud-list is-dark-list">
+            {audience.examples.slice(0, 3).map((ex) => (
+              <li>✓ {ex}</li>
             ))}
           </ul>
         </article>
       </div>
 
       <div class="aud-accompaniment">
-        <h2 class="heading-lg" style="margin-block-end: 1.25rem;">Cómo te acompañamos</h2>
+        <h2 class="heading-lg" style="margin-block-end: 1.1rem;">Cómo te acompañamos</h2>
         <div class="aud-pillars">
-          {audience.accompaniment.map((acc) => (
+          {audience.accompaniment.map((acc, idx) => (
             <div class="aud-pillar">
+              <span class="aud-kicker">0{idx + 1}</span>
               <h3 class="heading-md">{acc.title}</h3>
               <p>{acc.detail}</p>
             </div>
@@ -101,23 +104,49 @@ const other = audiencePaths.find((a) => a.slug !== audience.slug)!;
   }
 
   .aud-card {
-    padding: 1.75rem;
+    padding: 1.6rem;
     border-radius: var(--radius-xl);
     background: var(--bg-surface);
     border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: 0.7rem;
+  }
+
+  .aud-card.is-dark {
+    background: var(--surface-dark);
+    border-color: var(--border-on-dark);
+    color: var(--ink-on-dark);
+  }
+
+  .aud-kicker {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-deep);
+  }
+
+  .aud-kicker.is-peach {
+    color: var(--glow-peach);
   }
 
   .aud-list {
     padding-inline-start: 1.15rem;
+    margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: 0.5rem;
     font-size: var(--text-sm);
     color: var(--ink-secondary);
-    line-height: 1.55;
+    line-height: 1.5;
+  }
+
+  .aud-list.is-dark-list {
+    list-style: none;
+    padding-inline-start: 0;
+    color: var(--ink-on-dark-muted);
   }
 
   .aud-accompaniment {

@@ -45,14 +45,21 @@ const jsonLdNodes = [
         <article class="privacy-card">
           <h2 class="heading-md">3. Borradores en tu navegador</h2>
           <p>
-            Mientras completas el asistente de proyectos sin enviar el formulario, tu borrador se guarda únicamente en el almacenamiento local de tu propio navegador (con caducidad automática de 14 días) para que no pierdas tu avance. Puedes borrarlo en cualquier momento pulsando «Reiniciar» o limpiando los datos del navegador.
+            Mientras conversas o editas tu ficha sin enviar el formulario, tu borrador se guarda en el almacenamiento local de tu propio navegador (con caducidad automática de 14 días) para mantener continuidad entre la portada, las páginas de servicios y <a href="/create-project/" class="inline-link">/create-project/</a>. Puedes borrarlo en cualquier momento pulsando «Reiniciar» o limpiando los datos del navegador.
           </p>
         </article>
 
         <article class="privacy-card">
-          <h2 class="heading-md">4. Consultas, corrección o eliminación</h2>
+          <h2 class="heading-md">4. Procesamiento del asistente comercial (IA y modo guiado)</h2>
           <p>
-            Si enviaste una solicitud y deseas actualizar o eliminar tus datos de nuestros registros de contacto, escríbenos directamente a <a href={`mailto:${siteConfig.contactEmail}`} class="inline-link">{siteConfig.contactEmail}</a> indicando el correo con el que nos contactaste.
+            Cuando envías un mensaje explícitamente al asistente comercial, tu consulta y el contexto necesario de la ficha viajan a nuestro servidor para generar la respuesta. Cuando el modo IA está activo, esa solicitud se procesa mediante el proveedor de inteligencia artificial configurado (OpenAI o Google Gemini) únicamente para responder tu consulta; cuando la IA no está activa o se alcanzan límites de uso, el asistente responde en modo guiado sin llamadas al proveedor externo. Usamos una cookie técnica anónima (<code>HttpOnly</code>) para prevenir abuso y cuidar el presupuesto del asistente, sin rastreo publicitario. Te recomendamos no escribir contraseñas, datos bancarios ni información médica confidencial en el chat.
+          </p>
+        </article>
+
+        <article class="privacy-card">
+          <h2 class="heading-md">5. Consultas, corrección o eliminación</h2>
+          <p>
+            Si enviaste una solicitud comercial y deseas actualizar o eliminar tus datos de nuestros registros de contacto, escríbenos directamente a <a href={`mailto:${siteConfig.contactEmail}`} class="inline-link">{siteConfig.contactEmail}</a> indicando el correo con el que nos contactaste.
           </p>
         </article>
       </div>

@@ -1,8 +1,14 @@
 ---
+import fs from "node:fs";
+import path from "node:path";
 import ProjectLayout from "@/layouts/ProjectLayout.astro";
 import ProjectWorkspace from "@/components/project/ProjectWorkspace";
+
+const hasRiveAsset =
+  String(import.meta.env.PUBLIC_ENABLE_RIVE_MASCOT || "").toLowerCase() === "true" &&
+  fs.existsSync(path.join(process.cwd(), "public/brand/enix-mascot-rive.riv"));
 ---
 
 <ProjectLayout>
-  <ProjectWorkspace client:only="react" />
+  <ProjectWorkspace client:load hasRiveAsset={hasRiveAsset} />
 </ProjectLayout>

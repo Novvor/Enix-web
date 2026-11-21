@@ -1,0 +1,270 @@
+---
+const problemCases = [
+  {
+    id: "whatsapp",
+    pain: "Pierdo horas respondiendo lo mismo por WhatsApp y se me escapan citas",
+    solution: "Web rápida enfocada en móvil con servicios claros, agenda en línea y avisos automáticos.",
+    tag: "Reservas y captación",
+    category: "websites",
+    prompt: "Pierdo horas respondiendo consultas y reservas por WhatsApp; quiero una web con agenda clara para ordenar mi negocio."
+  },
+  {
+    id: "excel",
+    pain: "Coordinamos pedidos, inventario o técnicos entre planillas Excel y chats sueltos",
+    solution: "Sistema de gestión a medida con estados, roles por área y registro desde el celular.",
+    tag: "Operación ordenada",
+    category: "management-systems",
+    prompt: "Hoy coordinamos pedidos y operación en Excel y chats; necesitamos un sistema de gestión con estados y responsables."
+  },
+  {
+    id: "ads",
+    pain: "Probamos anuncios en Google o Instagram pero no sabemos qué trae clientes reales",
+    solution: "Campañas estructuradas, página de captación que convierte y medición transparente.",
+    tag: "Marketing medible",
+    category: "digital-advertising",
+    prompt: "Ya probamos anuncios pero sin claridad de retorno; queremos campañas mejor estructuradas y una página que convierta."
+  },
+  {
+    id: "brand",
+    pain: "Nuestro negocio creció pero la web y la marca se ven anticuadas frente a la competencia",
+    solution: "Renovación de identidad visual, mensajes claros y sitio comercial que genera confianza.",
+    tag: "Marca y presencia",
+    category: "brand-design",
+    prompt: "Nuestro negocio creció y necesitamos renovar nuestra marca y sitio web para proyectar un nivel profesional."
+  }
+];
+---
+
+<section class="section problems-section" aria-labelledby="problems-title">
+  <div class="container">
+    <div class="problems-head">
+      <div class="eyebrow">
+        <span class="eyebrow-dot" aria-hidden="true"></span>
+        <span>De problemas reales a soluciones claras</span>
+      </div>
+      <h2 id="problems-title" class="heading-lg">
+        Cuéntanos el bloqueo. Nosotros armamos la solución.
+      </h2>
+      <p class="lead">
+        Sin tecnicismos: traducimos lo que frena tu negocio en diseño, desarrollo y marketing.
+      </p>
+    </div>
+
+    <div class="problems-grid">
+      {problemCases.map((item) => (
+        <article class="problem-card">
+          <div class="problem-top">
+            <span class="problem-icon" aria-hidden="true">
+              {item.id === "whatsapp" && (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="3" />
+                  <path d="M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4" />
+                </svg>
+              )}
+              {item.id === "excel" && (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                  <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" />
+                </svg>
+              )}
+              {item.id === "ads" && (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 3v18h18" />
+                  <path d="m19 9-5 5-4-4-3 3" />
+                </svg>
+              )}
+              {item.id === "brand" && (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3l1.9 5.8h6.1l-4.9 3.6 1.9 5.8-5-3.6-5 3.6 1.9-5.8-4.9-3.6h6.1z" />
+                </svg>
+              )}
+            </span>
+            <span class="problem-tag">{item.tag}</span>
+          </div>
+
+          <div class="problem-flow">
+            <div class="problem-before">
+              <span class="flow-label">Hoy</span>
+              <p>«{item.pain}»</p>
+            </div>
+            <div class="problem-after">
+              <span class="flow-label is-accent">Solución ENIX</span>
+              <p>{item.solution}</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="problem-cta"
+            data-problem-talk
+            data-prompt={item.prompt}
+            data-category={item.category}
+          >
+            <span>Conversar sobre este caso</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .problems-section {
+    padding-block: clamp(2.5rem, 5vw, 4.25rem);
+  }
+
+  .problems-head {
+    max-inline-size: 720px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-block-end: 2rem;
+  }
+
+  .problems-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+
+  .problem-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1.1rem;
+    padding: 1.45rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
+    transition: border-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+  }
+
+  .problem-card:hover {
+    border-color: rgba(243, 75, 33, 0.36);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .problem-card:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  .problem-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .problem-icon {
+    inline-size: 42px;
+    block-size: 42px;
+    border-radius: 13px;
+    background: linear-gradient(145deg, #fff1e8 0%, #f5ecf7 100%);
+    color: var(--accent-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(243, 75, 33, 0.16);
+  }
+
+  .problem-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink-secondary);
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
+    background: var(--bg-canvas);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .problem-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .problem-before,
+  .problem-after {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .problem-before p {
+    margin: 0;
+    font-size: 0.96rem;
+    font-weight: 700;
+    color: var(--ink-primary);
+    line-height: 1.42;
+  }
+
+  .problem-after {
+    padding: 0.75rem 0.9rem;
+    border-radius: 14px;
+    background: var(--bg-canvas);
+    border: 1px solid rgba(48, 27, 60, 0.08);
+  }
+
+  .problem-after p {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.5;
+  }
+
+  .flow-label {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+  }
+
+  .flow-label.is-accent {
+    color: var(--accent-deep);
+  }
+
+  .problem-cta {
+    align-self: flex-start;
+    border: 0;
+    background: transparent;
+    padding: 0.3rem 0.1rem;
+    font-size: var(--text-xs);
+    font-weight: 800;
+    color: var(--accent-deep);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+  }
+
+  .problem-cta:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 780px) {
+    .problems-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { requestAssistantOpen } from "@/lib/project/storage";
+
+  document.querySelectorAll<HTMLButtonElement>("[data-problem-talk]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      requestAssistantOpen({
+        promptText: btn.dataset.prompt || "",
+        category: btn.dataset.category || null,
+        source: "problems-solved"
+      });
+    });
+  });
+</script>

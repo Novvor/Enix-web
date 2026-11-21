@@ -1,34 +1,123 @@
 ---
 import MarketingLayout from "@/layouts/MarketingLayout.astro";
 import { processStages, siteConfig } from "@/content/site";
+import { buildBreadcrumbSchema } from "@/lib/seo/schema";
+
+const jsonLdNodes = [
+  buildBreadcrumbSchema([
+    { name: "Portada", path: "/" },
+    { name: "Cómo trabajamos", path: "/how-we-work/" }
+  ])
+];
+
+const studioDisciplines = [
+  {
+    name: "Dirección y diseño de producto",
+    detail: "Arquitectura de pantallas, experiencia móvil, marca y claridad comercial antes de escribir código."
+  },
+  {
+    name: "Ingeniería y automatización",
+    detail: "Webs rápidas, aplicaciones, sistemas internos, integraciones y soluciones de IA con base limpia."
+  },
+  {
+    name: "Marketing digital y medición",
+    detail: "Estrategia de canales, Google/Meta Ads, SEO local y analítica para convertir visitas en oportunidades."
+  }
+];
 ---
 
 <MarketingLayout
   title="Cómo trabajamos — ENIX Studio"
   description="Etapas, entregables visibles y colaboración clara en cada proyecto digital de ENIX Studio."
+  jsonLdNodes={jsonLdNodes}
 >
-  <section class="section">
+  <section class="section hww-hero">
     <div class="container">
-      <div class="page-head">
-        <div class="eyebrow">
-          <span class="eyebrow-dot" aria-hidden="true"></span>
-          <span>Proceso de trabajo</span>
+      <div class="hww-hero-grid">
+        <div class="page-head">
+          <div class="eyebrow">
+            <span class="eyebrow-dot" aria-hidden="true"></span>
+            <span>Proceso de estudio · Sin cajas negras</span>
+          </div>
+          <h1 class="heading-xl">Cuatro etapas claras, con entregables que puedes ver y aprobar</h1>
+          <p class="lead">
+            {siteConfig.responsibilityStatement} Trabajamos por hitos concretos para que siempre tengas visibilidad del avance, control de prioridades y cero sorpresas.
+          </p>
+          <div class="hww-hero-actions">
+            <a href="/create-project/" class="btn btn-primary">Definir mi proyecto →</a>
+            <a href="/contact/" class="btn btn-secondary">Hablar directo con el equipo</a>
+          </div>
         </div>
-        <h1 class="heading-xl">Cuatro etapas claras, con entregables que puedes revisar</h1>
-        <p class="lead">
-          {siteConfig.responsibilityStatement} Trabajamos por hitos concretos para que siempre tengas visibilidad del avance y control de decisiones.
-        </p>
-      </div>
 
+        <!-- Visual 4-stage overview diagram -->
+        <div class="hww-visual-map" aria-hidden="true">
+          <div class="hww-map-head">
+            <span class="hww-map-dot"></span>
+            <span class="hww-map-dot"></span>
+            <span class="hww-map-dot"></span>
+            <span class="hww-map-title">Mapa de ejecución · ENIX Studio</span>
+          </div>
+          <div class="hww-map-steps">
+            {processStages.map((s) => (
+              <div class="hww-map-node">
+                <span class="hww-map-badge">{s.number}</span>
+                <div>
+                  <strong>{s.name}</strong>
+                  <span>{s.deliverable}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section hww-stages-section">
+    <div class="container">
       <ol class="stages-detail-list">
         {processStages.map((stage) => (
           <li class="stage-detail-card">
-            <div class="stage-detail-num">{stage.number}</div>
-            <div class="stage-detail-body">
-              <h2 class="heading-md">{stage.name}</h2>
+            <div class="stage-main-col">
+              <div class="stage-head-row">
+                <div class="stage-icon-badge" aria-hidden="true">
+                  {stage.number === "01" && (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="m21 21-4.3-4.3" />
+                      <path d="M11 8v6M8 11h6" />
+                    </svg>
+                  )}
+                  {stage.number === "02" && (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="3" />
+                      <path d="M3 9h18M9 21V9" />
+                    </svg>
+                  )}
+                  {stage.number === "03" && (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="16 18 22 12 16 6" />
+                      <polyline points="8 6 2 12 8 18" />
+                      <line x1="14" y1="4" x2="10" y2="20" />
+                    </svg>
+                  )}
+                  {stage.number === "04" && (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 3v18h18" />
+                      <path d="m19 9-5 5-4-4-3 3" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <span class="stage-step-label">Etapa {stage.number}</span>
+                  <h2 class="heading-md">{stage.name}</h2>
+                </div>
+              </div>
+
               <p class="stage-detail-desc">{stage.description}</p>
+
               <div class="stage-meta-grid">
-                <div class="stage-meta-box">
+                <div class="stage-meta-box is-deliverable">
                   <span>Entregable visible</span>
                   <strong>{stage.deliverable}</strong>
                 </div>
@@ -38,20 +127,111 @@ import { processStages, siteConfig } from "@/content/site";
                 </div>
               </div>
             </div>
+
+            <!-- Visual deliverable artifact preview per stage -->
+            <div class="stage-artifact-col" aria-hidden="true">
+              {stage.number === "01" && (
+                <div class="artifact-mock">
+                  <div class="artifact-mock-top">
+                    <span class="artifact-pill is-green">Confirmado</span>
+                    <span class="artifact-pill is-orange">Para después</span>
+                  </div>
+                  <div class="artifact-line"><strong>Alcance V1:</strong> Flujo principal + agenda</div>
+                  <div class="artifact-line"><strong>Integraciones:</strong> Correo y avisos</div>
+                  <div class="artifact-line is-muted"><strong>Etapa 2:</strong> Reportes avanzados</div>
+                </div>
+              )}
+
+              {stage.number === "02" && (
+                <div class="artifact-mock">
+                  <div class="artifact-mock-top">
+                    <span class="artifact-pill is-ink">Prototipo Desktop + Móvil</span>
+                  </div>
+                  <div class="artifact-wire-grid">
+                    <div class="wire-block is-tall">
+                      <span class="wire-bar is-dark"></span>
+                      <span class="wire-bar"></span>
+                      <span class="wire-cta"></span>
+                    </div>
+                    <div class="wire-block">
+                      <span class="wire-swatch" style="background:#301B3C"></span>
+                      <span class="wire-swatch" style="background:#F34B21"></span>
+                      <span class="wire-swatch" style="background:#FAF8F6;border:1px solid #d5cbd8"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {stage.number === "03" && (
+                <div class="artifact-mock">
+                  <div class="artifact-mock-top">
+                    <span class="artifact-pill is-green">Entorno de revisión listo</span>
+                  </div>
+                  <div class="artifact-check-row">✓ Velocidad y experiencia móvil</div>
+                  <div class="artifact-check-row">✓ Reglas de negocio y formularios</div>
+                  <div class="artifact-check-row">✓ Medición y pruebas antes de salir</div>
+                </div>
+              )}
+
+              {stage.number === "04" && (
+                <div class="artifact-mock">
+                  <div class="artifact-mock-top">
+                    <span class="artifact-pill is-ink">En producción</span>
+                    <span class="artifact-pill is-green">Base propia</span>
+                  </div>
+                  <div class="artifact-bars">
+                    <span style="block-size: 26px"></span>
+                    <span style="block-size: 38px"></span>
+                    <span style="block-size: 34px"></span>
+                    <span style="block-size: 52px" class="is-accent"></span>
+                    <span style="block-size: 62px" class="is-accent"></span>
+                  </div>
+                  <div class="artifact-line is-muted">Documentación + evolución opcional</div>
+                </div>
+              )}
+            </div>
           </li>
         ))}
       </ol>
+    </div>
+  </section>
 
-      <div class="cta-strip">
-        <div>
-          <h2 class="heading-md">¿Quieres llegar a la primera conversación con tu alcance ordenado?</h2>
-          <p class="lead" style="font-size: var(--text-sm); margin-top: 0.35rem;">
-            Usa el asistente para armar tu ficha editable en pocos minutos.
+  <!-- Human team disciplines strip -->
+  <section class="section hww-team-section">
+    <div class="container">
+      <div class="hww-team-panel">
+        <div class="hww-team-head">
+          <div class="eyebrow">
+            <span class="eyebrow-dot" aria-hidden="true"></span>
+            <span>Un equipo real detrás de cada entrega</span>
+          </div>
+          <h2 class="heading-lg">Tres disciplinas trabajando coordinadas bajo un mismo techo</h2>
+          <p class="lead">
+            En lugar de coordinar por separado a un diseñador, un programador y una agencia de anuncios, trabajas con un equipo integrado desde {siteConfig.location}.
           </p>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:0.65rem;">
-          <a href="/create-project/" class="btn btn-primary">Definir mi proyecto →</a>
-          <a href="/contact/" class="btn btn-secondary">Hablar con el equipo</a>
+
+        <div class="hww-disciplines-grid">
+          {studioDisciplines.map((d, idx) => (
+            <div class="hww-discipline-card">
+              <span class="hww-disc-num">0{idx + 1}</span>
+              <h3>{d.name}</h3>
+              <p>{d.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        <div class="cta-strip">
+          <div>
+            <h2 class="heading-md">¿Quieres llegar a la primera conversación con tu alcance ordenado?</h2>
+            <p class="lead" style="font-size: var(--text-sm); margin-top: 0.35rem;">
+              Usa el asistente para armar tu ficha editable en pocos minutos o escríbenos directo a <strong>{siteConfig.contactEmail}</strong>.
+            </p>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.65rem;">
+            <a href="/create-project/" class="btn btn-primary">Definir mi proyecto →</a>
+            <a href="/contact/" class="btn btn-secondary">Hablar con el equipo</a>
+          </div>
         </div>
       </div>
     </div>
@@ -59,13 +239,112 @@ import { processStages, siteConfig } from "@/content/site";
 </MarketingLayout>
 
 <style>
+  .hww-hero {
+    padding-block-end: 2rem;
+  }
+
+  .hww-hero-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: clamp(1.75rem, 4vw, 3rem);
+    align-items: center;
+  }
+
   .page-head {
-    max-inline-size: 780px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
-    margin-block-end: 3rem;
+  }
+
+  .hww-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block-start: 0.35rem;
+  }
+
+  .hww-visual-map {
+    padding: 1.25rem;
+    border-radius: 24px;
+    background: var(--surface-dark);
+    color: var(--ink-on-dark);
+    border: 1px solid var(--border-on-dark);
+    box-shadow: 0 24px 50px -18px rgba(48, 27, 60, 0.36);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .hww-map-head {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-block-end: 0.75rem;
+    border-bottom: 1px solid var(--border-on-dark);
+  }
+
+  .hww-map-dot {
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .hww-map-title {
+    margin-inline-start: 0.45rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--glow-peach);
+  }
+
+  .hww-map-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .hww-map-node {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .hww-map-badge {
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: 10px;
+    background: rgba(243, 75, 33, 0.24);
+    color: #ffb17a;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .hww-map-node > div > strong {
+    display: block;
+    font-size: 0.86rem;
+    color: #ffffff;
+  }
+
+  .hww-map-node > div > span {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--ink-on-dark-muted);
+    line-height: 1.45;
+    margin-block-start: 0.14rem;
+  }
+
+  .hww-stages-section {
+    padding-block-start: 1.5rem;
   }
 
   .stages-detail-list {
@@ -73,49 +352,66 @@ import { processStages, siteConfig } from "@/content/site";
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.35rem;
   }
 
   .stage-detail-card {
     display: grid;
-    grid-template-columns: 72px 1fr;
-    gap: 1.25rem;
-    padding: 1.75rem;
-    border-radius: var(--radius-xl);
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 1.5rem;
+    padding: clamp(1.35rem, 3vw, 2rem);
+    border-radius: 26px;
     background: var(--bg-surface);
     border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
+    align-items: center;
   }
 
-  .stage-detail-num {
+  .stage-main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .stage-head-row {
+    display: flex;
+    align-items: center;
+    gap: 0.95rem;
+  }
+
+  .stage-icon-badge {
+    inline-size: 54px;
+    block-size: 54px;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #fff1e8 0%, #f5ecf7 100%);
+    border: 1px solid rgba(243, 75, 33, 0.2);
+    color: var(--accent-deep);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    inline-size: 56px;
-    block-size: 56px;
-    border-radius: 16px;
-    background: var(--bg-warm-tint);
-    color: var(--accent-deep);
-    font-size: 1.15rem;
-    font-weight: 800;
+    flex-shrink: 0;
   }
 
-  .stage-detail-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+  .stage-step-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-deep);
   }
 
   .stage-detail-desc {
     font-size: var(--text-sm);
     color: var(--ink-secondary);
     line-height: 1.65;
+    margin: 0;
   }
 
   .stage-meta-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.85rem;
-    margin-block-start: 0.35rem;
   }
 
   .stage-meta-box {
@@ -129,17 +425,202 @@ import { processStages, siteConfig } from "@/content/site";
     font-size: var(--text-xs);
   }
 
+  .stage-meta-box.is-deliverable {
+    background: #fff9f5;
+    border-color: rgba(243, 75, 33, 0.16);
+  }
+
   .stage-meta-box span {
     color: var(--ink-muted);
-    font-weight: 600;
+    font-weight: 700;
+  }
+
+  /* Stage Deliverable Visual Mock */
+  .stage-artifact-col {
+    border-radius: 20px;
+    padding: 1.15rem;
+    background: linear-gradient(155deg, #faf6f3 0%, #f3ebf6 100%);
+    border: 1px solid rgba(48, 27, 60, 0.09);
+  }
+
+  .artifact-mock {
+    padding: 1rem;
+    border-radius: 14px;
+    background: var(--bg-surface);
+    border: 1px solid rgba(48, 27, 60, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    font-size: 0.76rem;
+  }
+
+  .artifact-mock-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .artifact-pill {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+  }
+
+  .artifact-pill.is-green {
+    background: var(--status-confirmed-bg);
+    color: var(--status-confirmed-ink);
+  }
+
+  .artifact-pill.is-orange {
+    background: var(--status-suggested-bg);
+    color: var(--status-suggested-ink);
+  }
+
+  .artifact-pill.is-ink {
+    background: #f3edf5;
+    color: var(--ink-primary);
+  }
+
+  .artifact-line {
+    padding: 0.45rem 0.6rem;
+    border-radius: 9px;
+    background: var(--bg-canvas);
+    color: var(--ink-primary);
+  }
+
+  .artifact-line.is-muted {
+    color: var(--ink-secondary);
+  }
+
+  .artifact-wire-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr;
+    gap: 0.55rem;
+  }
+
+  .wire-block {
+    padding: 0.65rem;
+    border-radius: 10px;
+    background: var(--bg-canvas);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-start;
+  }
+
+  .wire-bar {
+    inline-size: 70%;
+    block-size: 7px;
+    border-radius: 4px;
+    background: rgba(48, 27, 60, 0.18);
+  }
+
+  .wire-bar.is-dark {
+    inline-size: 92%;
+    block-size: 10px;
+    background: var(--ink-primary);
+  }
+
+  .wire-cta {
+    inline-size: 52%;
+    block-size: 16px;
+    border-radius: 999px;
+    background: var(--accent-orange);
+    margin-block-start: 0.25rem;
+  }
+
+  .wire-swatch {
+    inline-size: 20px;
+    block-size: 20px;
+    border-radius: 50%;
+  }
+
+  .artifact-check-row {
+    font-weight: 700;
+    color: var(--status-confirmed-ink);
+    padding: 0.35rem 0.55rem;
+    border-radius: 8px;
+    background: var(--status-confirmed-bg);
+  }
+
+  .artifact-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    block-size: 68px;
+    padding-block-start: 0.35rem;
+  }
+
+  .artifact-bars span {
+    flex: 1;
+    border-radius: 7px 7px 3px 3px;
+    background: rgba(48, 27, 60, 0.14);
+  }
+
+  .artifact-bars span.is-accent {
+    background: linear-gradient(180deg, #ff8a5c 0%, #f34b21 100%);
+  }
+
+  /* Team Disciplines Panel */
+  .hww-team-panel {
+    padding: clamp(1.5rem, 3.5vw, 2.75rem);
+    border-radius: 28px;
+    background: linear-gradient(155deg, #fff6f0 0%, #f6eff8 100%);
+    border: 1px solid rgba(243, 75, 33, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+  }
+
+  .hww-team-head {
+    max-inline-size: 700px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .hww-disciplines-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .hww-discipline-card {
+    padding: 1.25rem;
+    border-radius: 18px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .hww-disc-num {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--accent-deep);
+  }
+
+  .hww-discipline-card h3 {
+    margin: 0;
+    font-size: 0.96rem;
+    font-weight: 800;
+  }
+
+  .hww-discipline-card p {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--ink-secondary);
+    line-height: 1.55;
   }
 
   .cta-strip {
-    margin-block-start: 2.5rem;
-    padding: 1.75rem 2rem;
-    border-radius: var(--radius-xl);
-    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
-    border: 1px solid rgba(243, 75, 33, 0.16);
+    padding: 1.4rem 1.6rem;
+    border-radius: 20px;
+    background: var(--bg-surface);
+    border: 1px solid rgba(48, 27, 60, 0.1);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -147,10 +628,15 @@ import { processStages, siteConfig } from "@/content/site";
     gap: 1.25rem;
   }
 
-  @media (max-width: 720px) {
-    .stage-detail-card {
+  @media (max-width: 960px) {
+    .hww-hero-grid,
+    .stage-detail-card,
+    .hww-disciplines-grid {
       grid-template-columns: 1fr;
     }
+  }
+
+  @media (max-width: 640px) {
     .stage-meta-grid {
       grid-template-columns: 1fr;
     }

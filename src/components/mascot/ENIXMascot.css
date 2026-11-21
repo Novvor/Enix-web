@@ -1,0 +1,45 @@
+.enix-mascot {
+  display: inline-block;
+  position: relative;
+  inline-size: var(--enix-mascot-size, 72px);
+  max-inline-size: 100%;
+  aspect-ratio: 1;
+  vertical-align: middle;
+  flex: 0 0 auto;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.enix-mascot__canvas,
+.enix-mascot__fallback {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.enix-mascot__canvas {
+  opacity: 0;
+}
+
+.enix-mascot__fallback > svg,
+.enix-mascot__fallback > img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+
+.enix-mascot[data-rive-ready="true"] .enix-mascot__canvas {
+  opacity: 1;
+}
+
+.enix-mascot[data-rive-ready="true"] .enix-mascot__fallback {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enix-mascot .enix-mascot__canvas { visibility: hidden; }
+  .enix-mascot .enix-mascot__fallback { visibility: visible; }
+}

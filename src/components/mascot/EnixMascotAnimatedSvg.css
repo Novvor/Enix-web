@@ -1,0 +1,124 @@
+/* Expressive 60fps CSS rig animations for the official ENIX mascot SVG */
+
+.enix-svg-mascot {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .enix-svg-mascot .enix-rig-body {
+    transform-origin: 256px 430px;
+    animation: enix-float 3.1s ease-in-out infinite;
+  }
+
+  .enix-svg-mascot .enix-rig-shadow {
+    transform-origin: 0px 0px;
+    animation: enix-shadow-pulse 3.1s ease-in-out infinite;
+  }
+
+  .enix-svg-mascot .enix-rig-flame-top {
+    transform-origin: 256px 215px;
+    animation: enix-flame-sway 2.6s ease-in-out infinite;
+  }
+
+  .enix-svg-mascot .enix-rig-eye {
+    transform-origin: 0px 0px;
+    animation: enix-blink 4.4s ease-in-out infinite;
+  }
+
+  .enix-svg-mascot .enix-rig-arm-right-wave {
+    transform-origin: 0px 0px;
+    transform: rotate(-28deg);
+    animation: enix-wave-idle 3.6s ease-in-out infinite;
+  }
+
+  /* Mood 1: Greeting — cheerful energetic wave & bounce */
+  .enix-svg-mascot[data-mood="1"] .enix-rig-body {
+    animation: enix-greet-bounce 1.5s ease-in-out infinite;
+  }
+  .enix-svg-mascot[data-mood="1"] .enix-rig-arm-right-wave {
+    animation: enix-wave-greeting 0.9s ease-in-out infinite;
+  }
+
+  /* Mood 2: Attentive — subtle eager tilt forward */
+  .enix-svg-mascot[data-mood="2"] .enix-rig-body {
+    animation: enix-attentive 2.2s ease-in-out infinite;
+  }
+
+  /* Mood 3: Thinking — rhythmic thinking pulse while real request is in flight */
+  .enix-svg-mascot[data-mood="3"] .enix-rig-body {
+    animation: enix-thinking 1.15s ease-in-out infinite;
+  }
+  .enix-svg-mascot[data-mood="3"] .enix-rig-flame-top {
+    animation: enix-flame-sway 1.1s ease-in-out infinite;
+  }
+
+  /* Mood 4: Ready — friendly happy nod */
+  .enix-svg-mascot[data-mood="4"] .enix-rig-body {
+    animation: enix-float 2.6s ease-in-out infinite;
+  }
+  .enix-svg-mascot[data-mood="4"] .enix-rig-arm-right-wave {
+    animation: enix-wave-greeting 1.4s ease-in-out 2;
+  }
+
+  /* Mood 5: Error — gentle shake */
+  .enix-svg-mascot[data-mood="5"] .enix-rig-body {
+    animation: enix-error-shake 0.6s ease-in-out 2;
+  }
+}
+
+@keyframes enix-float {
+  0%, 100% { transform: translateY(0px) scaleY(1) scaleX(1); }
+  50% { transform: translateY(-14px) scaleY(1.025) scaleX(0.985); }
+}
+
+@keyframes enix-shadow-pulse {
+  0%, 100% { transform: translate(256px, 461px) scaleX(1); opacity: 1; }
+  50% { transform: translate(256px, 461px) scaleX(0.84); opacity: 0.65; }
+}
+
+@keyframes enix-flame-sway {
+  0%, 100% { transform: rotate(-2.5deg) scaleY(1); }
+  50% { transform: rotate(3.2deg) scaleY(1.03); }
+}
+
+@keyframes enix-blink {
+  0%, 44%, 48%, 92%, 96%, 100% { transform: scaleY(1); }
+  46%, 94% { transform: scaleY(0.08); }
+}
+
+@keyframes enix-wave-idle {
+  0%, 60%, 100% { transform: rotate(-28deg); }
+  70% { transform: rotate(-108deg); }
+  78% { transform: rotate(-78deg); }
+  86% { transform: rotate(-112deg); }
+  94% { transform: rotate(-55deg); }
+}
+
+@keyframes enix-wave-greeting {
+  0%, 100% { transform: rotate(-118deg); }
+  50% { transform: rotate(-76deg); }
+}
+
+@keyframes enix-greet-bounce {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  45% { transform: translateY(-20px) rotate(3deg); }
+}
+
+@keyframes enix-attentive {
+  0%, 100% { transform: translateY(-4px) rotate(3deg) scale(1.02); }
+  50% { transform: translateY(-12px) rotate(1deg) scale(1.035); }
+}
+
+@keyframes enix-thinking {
+  0%, 100% { transform: translateY(-6px) rotate(-4deg); }
+  50% { transform: translateY(-18px) rotate(4deg); }
+}
+
+@keyframes enix-error-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-12px) rotate(-3deg); }
+  75% { transform: translateX(12px) rotate(3deg); }
+}

@@ -1,11 +1,18 @@
 ---
+import fs from "node:fs";
+import path from "node:path";
 import "@fontsource-variable/plus-jakarta-sans";
 import "@/styles/tokens.css";
 import "@/styles/global.css";
 import SeoHead from "@/components/seo/SeoHead.astro";
 import SiteHeader from "@/components/navigation/SiteHeader.astro";
 import SiteFooter from "@/components/navigation/SiteFooter.astro";
+import ContextualAssistant from "@/components/assistant/ContextualAssistant";
 import { siteConfig } from "@/content/site";
+
+const hasRiveAsset =
+  String(import.meta.env.PUBLIC_ENABLE_RIVE_MASCOT || "").toLowerCase() === "true" &&
+  fs.existsSync(path.join(process.cwd(), "public/brand/enix-mascot-rive.riv"));
 
 interface Props {
   title?: string;
@@ -45,6 +52,7 @@ const {
     <main id="contenido">
       <slot />
     </main>
+    <ContextualAssistant client:idle currentPath={Astro.url.pathname} hasRiveAsset={hasRiveAsset} />
     <SiteFooter />
   </body>
 </html>

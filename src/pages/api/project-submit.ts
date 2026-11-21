@@ -78,6 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
       honeypot?: string;
       idempotencyKey?: string;
       brief?: ProjectBrief;
+      contact?: { name?: string; email?: string; company?: string; role?: string; phone?: string };
     } | null;
 
     if (!body) {
@@ -88,11 +89,11 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: false, code: "spam_detected", message: "No pudimos procesar la solicitud." }, 400);
     }
 
-    const name = sanitize(body.name, 140);
-    const email = sanitize(body.email, 180);
-    const company = sanitize(body.company, 140);
-    const role = sanitize(body.role, 120);
-    const phone = sanitize(body.phone, 60);
+    const name = sanitize(body.name ?? body.contact?.name, 140);
+    const email = sanitize(body.email ?? body.contact?.email, 180);
+    const company = sanitize(body.company ?? body.contact?.company, 140);
+    const role = sanitize(body.role ?? body.contact?.role, 120);
+    const phone = sanitize(body.phone ?? body.contact?.phone, 60);
     const notes = sanitize(body.notes, 2000);
     const idempotencyKey = sanitize(body.idempotencyKey, 80);
 
@@ -177,6 +178,9 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    const resendData = (await resendRes.json().catch(() => null)) as { id?: string } | null;
+    const providerMessageId = typeof resendData?.id === "string" ? resendData.id : null;
+
     if (idempotencyKey) {
       idempotencyCache.set(idempotencyKey, { referenceId, createdAt: Date.now() });
     }
@@ -184,7 +188,9 @@ export const POST: APIRoute = async ({ request }) => {
     return json({
       ok: true,
       referenceId,
-      message: `Recibimos tu ficha correctamente (referencia ${referenceId}). El equipo de ENIX Studio la revisará para proponerte el siguiente paso.`
+      deliveryStatus: "accepted_by_mail_provider",
+      providerMessageId,
+      message: `Tu ficha fue enviada al servicio de correo para el equipo de ENIX Studio (referencia ${referenceId}). Conserva una copia o descarga tu ficha si deseas respaldo local.`
     });
   } catch {
     return json(

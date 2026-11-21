@@ -52,6 +52,11 @@ export interface ChatOption {
   kind?: "primary" | "neutral";
 }
 
+export interface ChatLink {
+  label: string;
+  href: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "assistant" | "user";
@@ -60,6 +65,9 @@ export interface ChatMessage {
   text: string;
   interpretation?: string;
   options?: ChatOption[];
+  links?: ChatLink[];
+  mode?: "ai" | "guided";
+  requestId?: string;
   createdAt: string;
   editable?: boolean;
 }
@@ -95,10 +103,14 @@ export interface AssistantTurnResponse {
   expectedRevision: number;
   interpretation: string;
   question: string;
+  reply?: string;
   stage: ProjectStage;
   stepId: string;
   options: ChatOption[];
+  links?: ChatLink[];
   patch: BriefPatch;
+  requestId?: string;
+  budgetNotice?: string;
 }
 
 export interface ProjectDraft {
@@ -110,6 +122,81 @@ export interface ProjectDraft {
   brief: ProjectBrief;
   messages: ChatMessage[];
   answers: Record<string, string>;
+  unsentText?: string;
+  lastPageId?: string;
+  manualFields?: string[];
+  pendingRequestId?: string | null;
+}
+
+export interface BriefReadiness {
+  defined: string[];
+  toClarify: string[];
+}
+
+export function computeBriefReadiness(brief: ProjectBrief): BriefReadiness {
+  const defined: string[] = [];
+  const toClarify: string[] = [];
+
+  if (brief.idea.trim() || brief.goal.trim()) {
+    defined.push("Idea y objetivo principal");
+  } else {
+    toClarify.push("Idea u objetivo principal");
+  }
+
+  if (brief.category && brief.category !== "undetermined") {
+    defined.push(`Enfoque: ${CATEGORY_LABELS[brief.category] || brief.category}`);
+  } else {
+    toClarify.push("Tipo de solución o servicio");
+  }
+
+  const isMkt = brief.track === "marketing" || brief.track === "combined";
+
+  if (isMkt) {
+    if (brief.targetAudienceAndTerritory?.trim()) {
+      defined.push("Público y territorio");
+    } else {
+      toClarify.push("Público y territorio");
+    }
+    if (brief.existingChannelsAndAssets?.trim()) {
+      defined.push("Canales y situación actual");
+    } else {
+      toClarify.push("Canales o web actual");
+    }
+    if (brief.engagementModality && brief.engagementModality !== "undecided") {
+      defined.push("Modalidad de trabajo");
+    } else {
+      toClarify.push("Modalidad (puntual o periódico)");
+    }
+    if (brief.adSpendBudget && brief.adSpendBudget !== "Por definir") {
+      defined.push("Inversión publicitaria referencial");
+    }
+  } else {
+    if (brief.users.length > 0) {
+      defined.push("Usuarios principales");
+    } else {
+      toClarify.push("Quiénes lo usarán");
+    }
+    if (brief.currentSituation.trim()) {
+      defined.push("Situación actual");
+    } else {
+      toClarify.push("Cómo lo resuelven hoy");
+    }
+  }
+
+  const confirmedReqs = brief.requirements.filter((r) => r.status === "confirmed");
+  if (confirmedReqs.length > 0) {
+    defined.push(`${confirmedReqs.length} punto${confirmedReqs.length === 1 ? "" : "s"} confirmado${confirmedReqs.length === 1 ? "" : "s"}`);
+  } else {
+    toClarify.push("Alcance inicial prioritario");
+  }
+
+  if (brief.declaredTimeline && brief.declaredTimeline !== "Por definir") {
+    defined.push("Plazo de referencia");
+  } else {
+    toClarify.push("Plazo o fecha objetivo");
+  }
+
+  return { defined, toClarify };
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {

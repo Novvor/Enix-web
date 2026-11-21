@@ -16,6 +16,8 @@
     "@astrojs/sitemap": "^3.6.0",
     "@astrojs/vercel": "^8.1.4",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.5",
+    "@rive-app/webgl2": "^2.54.0",
+    "@upstash/redis": "^1.41.0",
     "astro": "^5.13.0",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",
