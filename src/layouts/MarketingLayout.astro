@@ -1,0 +1,50 @@
+---
+import "@fontsource-variable/plus-jakarta-sans";
+import "@/styles/tokens.css";
+import "@/styles/global.css";
+import SeoHead from "@/components/seo/SeoHead.astro";
+import SiteHeader from "@/components/navigation/SiteHeader.astro";
+import SiteFooter from "@/components/navigation/SiteFooter.astro";
+import { siteConfig } from "@/content/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+  omitCanonical?: boolean;
+  robots?: string;
+  jsonLdNodes?: Record<string, unknown>[];
+}
+
+const {
+  title = siteConfig.defaultTitle,
+  description = siteConfig.defaultDescription,
+  noindex = false,
+  omitCanonical = false,
+  robots,
+  jsonLdNodes = []
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <SeoHead
+      title={title}
+      description={description}
+      pathname={Astro.url.pathname}
+      noindex={noindex}
+      omitCanonical={omitCanonical}
+      robots={robots}
+      jsonLdNodes={jsonLdNodes}
+    />
+  </head>
+  <body>
+    <a href="#contenido" class="skip-link visually-hidden">Saltar al contenido principal</a>
+    <SiteHeader currentPath={Astro.url.pathname} />
+    <main id="contenido">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

@@ -1,27 +1,38 @@
+# ENIX Studio — Política de rastreo (producción)
+# Nota: /create-project/ NO se bloquea aquí para permitir que los buscadores lean su meta noindex sin contradicción.
+# Las rutas /api/ sí se bloquean al rastreo además de devolver X-Robots-Tag: noindex, nofollow.
+
 User-agent: *
 Allow: /
+Disallow: /api/
 
-# AI Crawlers & LLM Indexing (ChatGPT, SearchGPT, Claude, Perplexity, Google Gemini)
-User-agent: GPTBot
+# Búsqueda en Google (estándar y búsqueda generativa)
+User-agent: Googlebot
 Allow: /
+Disallow: /api/
+
+# Búsqueda en ChatGPT (separada explícitamente del rastreo de entrenamiento)
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /api/
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /api/
 
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
+# Búsqueda en Perplexity
 User-agent: PerplexityBot
 Allow: /
+Disallow: /api/
+
+# Rastreadores de entrenamiento (política separada y explícita; ajustar si el negocio decide restringir entrenamiento)
+User-agent: GPTBot
+Disallow: /
 
 User-agent: Google-Extended
-Allow: /
+Disallow: /
 
 User-agent: CCBot
-Allow: /
+Disallow: /
 
-# Canonical Sitemap & LLM summary
 Sitemap: https://www.enix.studio/sitemap-index.xml

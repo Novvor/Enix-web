@@ -1,0 +1,138 @@
+---
+import type { FaqItem } from "@/content/site";
+
+interface Props {
+  items: FaqItem[];
+  heading?: string;
+}
+
+const { items, heading = "Preguntas frecuentes" } = Astro.props;
+---
+
+<section class="section faq-section">
+  <div class="container faq-container">
+    <div class="faq-head">
+      <div class="eyebrow">
+        <span class="eyebrow-dot" aria-hidden="true"></span>
+        <span>Claridad antes de empezar</span>
+      </div>
+      <h2 class="heading-lg">{heading}</h2>
+    </div>
+
+    <div class="faq-list" data-faq-accordion>
+      {items.map((item, idx) => (
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button
+              type="button"
+              class="faq-trigger"
+              aria-expanded={idx === 0 ? "true" : "false"}
+              aria-controls={`faq-panel-${item.id}`}
+              data-faq-trigger
+            >
+              <span>{item.question}</span>
+              <span class="faq-icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div id={`faq-panel-${item.id}`} class="faq-panel" hidden={idx !== 0}>
+            <p>{item.answer}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .faq-container {
+    max-inline-size: 920px;
+  }
+
+  .faq-head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    margin-block-end: 2rem;
+  }
+
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .faq-item {
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+  }
+
+  .faq-heading {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .faq-trigger {
+    inline-size: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    border: 0;
+    background: transparent;
+    text-align: start;
+    font-weight: 700;
+    color: var(--ink-primary);
+    cursor: pointer;
+  }
+
+  .faq-trigger:hover {
+    background: var(--bg-canvas);
+  }
+
+  .faq-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 28px;
+    block-size: 28px;
+    border-radius: 50%;
+    background: var(--bg-subtle);
+    color: var(--ink-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast);
+  }
+
+  .faq-trigger[aria-expanded="true"] .faq-icon {
+    transform: rotate(45deg);
+    background: var(--bg-warm-tint);
+    color: var(--accent-deep);
+  }
+
+  .faq-panel {
+    padding: 0 1.35rem 1.25rem;
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.65;
+  }
+</style>
+
+<script>
+  document.querySelectorAll("[data-faq-accordion]").forEach((acc) => {
+    const triggers = Array.from(acc.querySelectorAll<HTMLButtonElement>("[data-faq-trigger]"));
+    triggers.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const expanded = btn.getAttribute("aria-expanded") === "true";
+        const panelId = btn.getAttribute("aria-controls");
+        const panel = panelId ? document.getElementById(panelId) : null;
+        btn.setAttribute("aria-expanded", String(!expanded));
+        if (panel) panel.hidden = expanded;
+      });
+    });
+  });
+</script>

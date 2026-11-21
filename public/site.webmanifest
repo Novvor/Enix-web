@@ -1,6 +1,12 @@
 {
-  "name": "Enix Studio",
-  "short_name": "Enix",
+  "name": "ENIX Studio",
+  "short_name": "ENIX Studio",
+  "description": "Diseño, desarrollo y marketing digital a medida para emprendedores y empresas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF8F6",
+  "theme_color": "#301B3C",
+  "lang": "es",
   "icons": [
     {
       "src": "/favicon-192x192.png",
@@ -12,8 +18,5 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "theme_color": "#0B1120",
-  "background_color": "#070B14",
-  "display": "standalone"
+  ]
 }

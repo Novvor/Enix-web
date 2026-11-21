@@ -1,0 +1,80 @@
+/* ENIX Studio v2 — Design Tokens */
+:root {
+  /* Core Palette */
+  --bg-canvas: #faf8f6;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f3edf3;
+  --bg-warm-tint: #fff6f1;
+
+  --ink-primary: #301b3c;
+  --ink-secondary: #6b6071;
+  --ink-muted: #7c7182;
+
+  --accent-orange: #f34b21;
+  --accent-coral: #ff6b42;
+  --accent-deep: #b92f0e;
+  --glow-peach: #ffd1b4;
+
+  --surface-dark: #211329;
+  --surface-dark-elevated: #2c1a36;
+  --surface-dark-card: rgba(255, 255, 255, 0.05);
+  --ink-on-dark: #faf8f6;
+  --ink-on-dark-muted: #c9bed1;
+
+  /* Semantic Status (always paired with text labels) */
+  --status-confirmed-bg: #edf7f1;
+  --status-confirmed-ink: #175c38;
+  --status-confirmed-border: rgba(23, 92, 56, 0.22);
+
+  --status-suggested-bg: #fff1eb;
+  --status-suggested-ink: #b92f0e;
+  --status-suggested-border: rgba(243, 75, 33, 0.28);
+
+  --status-pending-bg: #f3edf3;
+  --status-pending-ink: #5a4b63;
+  --status-pending-border: rgba(48, 27, 60, 0.16);
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(48, 27, 60, 0.12);
+  --border-strong: rgba(48, 27, 60, 0.22);
+  --border-on-dark: rgba(250, 248, 246, 0.14);
+
+  /* Shadows */
+  --shadow-nav: 0 12px 32px -12px rgba(48, 27, 60, 0.1), 0 2px 6px rgba(48, 27, 60, 0.04);
+  --shadow-card: 0 16px 40px -20px rgba(48, 27, 60, 0.12), 0 1px 3px rgba(48, 27, 60, 0.04);
+  --shadow-composer: 0 24px 64px -20px rgba(243, 75, 33, 0.22), 0 12px 32px -16px rgba(48, 27, 60, 0.14);
+  --shadow-megamenu: 0 32px 64px -18px rgba(48, 27, 60, 0.18), 0 4px 16px -4px rgba(48, 27, 60, 0.08);
+
+  /* Typography */
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Fluid Type Scale */
+  --text-hero: clamp(2.55rem, 6.2vw, 6rem);
+  --text-h1: clamp(2.15rem, 4.4vw, 4rem);
+  --text-h2: clamp(1.75rem, 3.2vw, 2.85rem);
+  --text-h3: clamp(1.25rem, 1.8vw, 1.55rem);
+  --text-lead: clamp(1.0625rem, 1.35vw, 1.25rem);
+  --text-body: 1.0625rem;
+  --text-sm: 0.9375rem;
+  --text-xs: 0.8125rem;
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
+
+  /* Layout */
+  --container-max: 1320px;
+  --nav-max: 1440px;
+  --gutter: clamp(1.125rem, 3vw, 2.5rem);
+  --section-py: clamp(4.25rem, 8vw, 7.5rem);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
+}

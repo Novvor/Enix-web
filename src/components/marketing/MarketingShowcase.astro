@@ -1,0 +1,399 @@
+---
+import { primaryMarketingServices, brandComplementaryService } from "@/content/marketing";
+---
+
+<section class="section marketing-showcase">
+  <div class="container">
+    <div class="mkt-head-row">
+      <div class="mkt-intro">
+        <div class="eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>Marketing digital y marca</span>
+        </div>
+        <h2 class="heading-lg">También ayudamos a que te encuentren y te elijan.</h2>
+        <p class="lead">
+          Conectamos estrategia, contenido y campañas con la experiencia digital de tu negocio.
+        </p>
+      </div>
+      <div class="mkt-head-cta">
+        <a href="/marketing/" class="btn btn-secondary">Explorar marketing →</a>
+        <a href="/create-project/?category=marketing" class="btn btn-primary">Definir plan de marketing</a>
+      </div>
+    </div>
+
+    <div class="mkt-bento">
+      {primaryMarketingServices.map((item, idx) => (
+        <article class:list={["mkt-card", { "is-featured": idx === 1 || idx === 5 }]}>
+          <div class="mkt-card-visual" aria-hidden="true">
+            {item.previewType === "strategy" && (
+              <div class="mkt-mini">
+                <span class="mkt-mini-kicker">Mapa de canales · Ejemplo ilustrativo</span>
+                <div class="mkt-mini-pills">
+                  <span class="mkt-chip active">Búsqueda local</span>
+                  <span class="mkt-chip active">Landing</span>
+                  <span class="mkt-chip">Email</span>
+                </div>
+              </div>
+            )}
+
+            {item.previewType === "ads" && (
+              <div class="mkt-mini">
+                <span class="mkt-mini-kicker">Estructura de campaña · Demostración</span>
+                <div class="mkt-mini-row">
+                  <span>Google Ads + Meta Ads</span>
+                  <span class="mkt-tag">Pauta separada</span>
+                </div>
+                <div class="mkt-mini-flow">
+                  <span>Anuncio</span> → <span>Página de captación</span> → <span>Reserva / Consulta</span>
+                </div>
+              </div>
+            )}
+
+            {item.previewType === "seo" && (
+              <div class="mkt-mini">
+                <span class="mkt-mini-kicker">Búsqueda orgánica y local</span>
+                <div class="mkt-seo-bar">
+                  <strong>Tu negocio · Ciudad</strong>
+                  <span>Servicios claros · Ficha local coherente · Velocidad móvil</span>
+                </div>
+              </div>
+            )}
+
+            {item.previewType === "social" && (
+              <div class="mkt-mini">
+                <span class="mkt-mini-kicker">Calendario editorial</span>
+                <div class="mkt-mini-pills">
+                  <span class="mkt-chip">Educativo</span>
+                  <span class="mkt-chip active">Oferta</span>
+                  <span class="mkt-chip">Proceso</span>
+                </div>
+              </div>
+            )}
+
+            {item.previewType === "email" && (
+              <div class="mkt-mini">
+                <span class="mkt-mini-kicker">Seguimiento comercial</span>
+                <div class="mkt-mini-flow">
+                  <span>Consulta</span> → <span>Aviso equipo</span> → <span>Seguimiento</span>
+                </div>
+              </div>
+            )}
+
+            {item.previewType === "analytics" && (
+              <div class="mkt-mini">
+                <span class="mkt-mini-kicker">Recorrido medido · Demostración</span>
+                <div class="mkt-mini-row">
+                  <span>Visita → Formulario → Contacto</span>
+                  <span class="mkt-tag green">Eventos reales</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div class="mkt-card-body">
+            <h3 class="heading-md">{item.name}</h3>
+            <p class="mkt-card-desc">{item.shortDescription}</p>
+            <div class="mkt-card-links">
+              <a href={`/marketing/${item.slug}/`} class="mkt-link">
+                Ver detalle →
+              </a>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <!-- Complementary Visible Card: Branding & Brand Design -->
+    <article class="brand-complement-card">
+      <div class="brand-complement-copy">
+        <span class="eyebrow" style="background: var(--bg-surface);">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>Servicio complementario · Marca</span>
+        </span>
+        <h3 class="heading-md">{brandComplementaryService.name}</h3>
+        <p class="mkt-card-desc">
+          Identidad, mensajes y materiales gráficos. Separamos con claridad cuándo conviene construir una identidad de marca completa y cuándo basta con diseñar piezas para una campaña puntual.
+        </p>
+      </div>
+
+      <div class="brand-complement-split">
+        <div class="brand-tier">
+          <strong>Identidad de marca completa</strong>
+          <p>Sistema visual, paleta, tipografía, tono de mensajes y guía para web, redes y operación.</p>
+        </div>
+        <div class="brand-tier">
+          <strong>Piezas para campaña</strong>
+          <p>Anuncios, banners, presentaciones y adaptaciones gráficas sobre tu identidad existente.</p>
+        </div>
+      </div>
+
+      <div class="brand-complement-actions">
+        <a href="/marketing/brand-design/" class="btn btn-secondary btn-sm">Explorar branding →</a>
+        <a
+          href="/create-project/?category=brand-design"
+          class="btn btn-primary btn-sm"
+          data-mkt-start={brandComplementaryService.starterPrompt}
+          data-mkt-cat="brand-design"
+        >
+          Mejorar mi marca
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<style>
+  .mkt-head-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-block-end: clamp(2rem, 4vw, 3rem);
+  }
+
+  .mkt-intro {
+    max-inline-size: 660px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .mkt-head-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .mkt-bento {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+
+  .mkt-card {
+    grid-column: span 4;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: 1.35rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+
+  .mkt-card.is-featured {
+    grid-column: span 6;
+  }
+
+  .mkt-card:hover {
+    border-color: rgba(243, 75, 33, 0.34);
+  }
+
+  .mkt-card-visual {
+    padding: 0.9rem;
+    border-radius: var(--radius-md);
+    background: linear-gradient(155deg, #fff6f1 0%, #f4edf5 100%);
+    border: 1px solid rgba(48, 27, 60, 0.08);
+  }
+
+  .mkt-mini {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+  }
+
+  .mkt-mini-kicker {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-muted);
+  }
+
+  .mkt-mini-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .mkt-chip {
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--bg-subtle);
+    color: var(--ink-primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .mkt-chip.active {
+    background: var(--bg-warm-tint);
+    color: var(--accent-deep);
+  }
+
+  .mkt-mini-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+  }
+
+  .mkt-tag {
+    padding: 0.14rem 0.5rem;
+    border-radius: 999px;
+    background: var(--status-suggested-bg);
+    color: var(--status-suggested-ink);
+    font-size: 0.66rem;
+    font-weight: 700;
+  }
+
+  .mkt-tag.green {
+    background: var(--status-confirmed-bg);
+    color: var(--status-confirmed-ink);
+  }
+
+  .mkt-mini-flow {
+    font-size: 0.72rem;
+    color: var(--ink-secondary);
+    font-weight: 600;
+  }
+
+  .mkt-seo-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .mkt-seo-bar span {
+    font-size: 0.7rem;
+    color: var(--ink-secondary);
+  }
+
+  .mkt-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+
+  .mkt-card-desc {
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.55;
+  }
+
+  .mkt-card-links {
+    margin-block-start: auto;
+    padding-block-start: 0.35rem;
+  }
+
+  .mkt-link {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--accent-deep);
+  }
+
+  .mkt-link:hover {
+    text-decoration: underline;
+  }
+
+  /* Complementary Brand Card */
+  .brand-complement-card {
+    margin-block-start: 1.35rem;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
+    border: 1px solid rgba(243, 75, 33, 0.2);
+    display: grid;
+    grid-template-columns: 1.1fr 1.2fr auto;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .brand-complement-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+
+  .brand-complement-split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+
+  .brand-tier {
+    padding: 0.95rem 1.05rem;
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .brand-tier strong {
+    display: block;
+    font-size: var(--text-xs);
+    margin-block-end: 0.25rem;
+    color: var(--ink-primary);
+  }
+
+  .brand-tier p {
+    font-size: 0.78rem;
+    color: var(--ink-secondary);
+    line-height: 1.45;
+  }
+
+  .brand-complement-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  @media (max-width: 1024px) {
+    .mkt-card,
+    .mkt-card.is-featured {
+      grid-column: span 6;
+    }
+
+    .brand-complement-card {
+      grid-template-columns: 1fr;
+    }
+
+    .brand-complement-actions {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .mkt-card,
+    .mkt-card.is-featured {
+      grid-column: span 12;
+    }
+
+    .brand-complement-split {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { saveStarterIdea } from "@/lib/project/storage";
+
+  document.querySelectorAll<HTMLAnchorElement>("[data-mkt-start]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const prompt = el.dataset.mktStart || "";
+      const cat = el.dataset.mktCat || null;
+      if (prompt) saveStarterIdea(prompt, cat);
+    });
+  });
+</script>

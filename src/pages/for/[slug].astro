@@ -1,0 +1,181 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import { audiencePaths, type AudiencePath } from "@/content/site";
+
+export function getStaticPaths() {
+  return audiencePaths.map((audience) => ({
+    params: { slug: audience.slug },
+    props: { audience }
+  }));
+}
+
+interface Props {
+  audience: AudiencePath;
+}
+
+const { audience } = Astro.props;
+const other = audiencePaths.find((a) => a.slug !== audience.slug)!;
+---
+
+<MarketingLayout
+  title={`${audience.title} — ENIX Studio`}
+  description={audience.summary}
+>
+  <section class="section">
+    <div class="container">
+      <div class="aud-hero">
+        <div class="eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>{audience.eyebrow}</span>
+        </div>
+        <h1 class="heading-xl">{audience.headline}</h1>
+        <p class="lead">{audience.summary}</p>
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.5rem;">
+          <a
+            href="/create-project/"
+            class="btn btn-primary"
+            data-aud-starter={audience.starterPrompt}
+          >
+            Definir mi proyecto →
+          </a>
+          <a href="/contact/" class="btn btn-secondary">Hablar con el equipo</a>
+        </div>
+      </div>
+
+      <div class="aud-grid">
+        <article class="aud-card">
+          <h2 class="heading-md">Situaciones frecuentes</h2>
+          <ul class="aud-list">
+            {audience.situations.map((s) => (
+              <li>{s}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="aud-card">
+          <h2 class="heading-md">Ejemplos de lo que construimos</h2>
+          <ul class="aud-list">
+            {audience.examples.map((ex) => (
+              <li>{ex}</li>
+            ))}
+          </ul>
+        </article>
+      </div>
+
+      <div class="aud-accompaniment">
+        <h2 class="heading-lg" style="margin-block-end: 1.25rem;">Cómo te acompañamos</h2>
+        <div class="aud-pillars">
+          {audience.accompaniment.map((acc) => (
+            <div class="aud-pillar">
+              <h3 class="heading-md">{acc.title}</h3>
+              <p>{acc.detail}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="aud-switch">
+        <span>¿Buscas el enfoque para {other.title.toLowerCase()}?</span>
+        <a href={`/for/${other.slug}/`} class="btn btn-secondary btn-sm">
+          Ver {other.title} →
+        </a>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .aud-hero {
+    max-inline-size: 820px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-block-end: 3rem;
+  }
+
+  .aud-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .aud-card {
+    padding: 1.75rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .aud-list {
+    padding-inline-start: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.55;
+  }
+
+  .aud-accompaniment {
+    margin-block-start: 3rem;
+  }
+
+  .aud-pillars {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+
+  .aud-pillar {
+    padding: 1.5rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
+    border: 1px solid rgba(243, 75, 33, 0.16);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .aud-pillar p {
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.55;
+  }
+
+  .aud-switch {
+    margin-block-start: 2.5rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  @media (max-width: 820px) {
+    .aud-grid,
+    .aud-pillars {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { saveStarterIdea } from "@/lib/project/storage";
+
+  document.querySelectorAll<HTMLAnchorElement>("[data-aud-starter]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const prompt = el.dataset.audStarter || "";
+      if (prompt) saveStarterIdea(prompt, null);
+    });
+  });
+</script>

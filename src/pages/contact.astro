@@ -1,0 +1,258 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import { siteConfig } from "@/content/site";
+---
+
+<MarketingLayout
+  title="Contacto — ENIX Studio"
+  description="Conversa directamente con el equipo de ENIX Studio o inicia tu ficha de proyecto en el asistente."
+>
+  <section class="section">
+    <div class="container">
+      <div class="contact-grid">
+        <div class="contact-info">
+          <div class="eyebrow">
+            <span class="eyebrow-dot" aria-hidden="true"></span>
+            <span>Hablar con el equipo</span>
+          </div>
+          <h1 class="heading-xl">Conversemos sobre lo que necesitas construir</h1>
+          <p class="lead">
+            Si prefieres escribirnos directamente, usa este formulario o envíanos un correo. Si aún estás ordenando tu idea, el asistente te ayudará a llegar con una ficha clara.
+          </p>
+
+          <div class="contact-meta-card">
+            <div>
+              <span class="meta-label">Correo directo</span>
+              <a href={`mailto:${siteConfig.contactEmail}`} class="meta-value">{siteConfig.contactEmail}</a>
+            </div>
+            <div>
+              <span class="meta-label">Ubicación y alcance</span>
+              <span class="meta-value">{siteConfig.location}</span>
+            </div>
+          </div>
+
+          <div class="contact-assistant-card">
+            <strong>¿Prefieres ordenar tu proyecto paso a paso?</strong>
+            <p>Usa el asistente de proyectos ENIX para generar una ficha editable y descargable sin registrarte.</p>
+            <a href="/create-project/" class="btn btn-secondary btn-sm" style="align-self: flex-start;">
+              Ir al asistente de proyectos →
+            </a>
+          </div>
+        </div>
+
+        <form class="contact-form-card" data-contact-form novalidate>
+          <h2 class="heading-md">Envíanos tu consulta</h2>
+
+          <!-- Honeypot -->
+          <div class="visually-hidden" aria-hidden="true">
+            <label for="contact-hp">No completar</label>
+            <input id="contact-hp" name="honeypot" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="field">
+            <label for="c-name">Nombre *</label>
+            <input id="c-name" name="name" type="text" required placeholder="Tu nombre completo" />
+          </div>
+
+          <div class="field">
+            <label for="c-email">Correo electrónico *</label>
+            <input id="c-email" name="email" type="email" required placeholder="nombre@empresa.com" />
+          </div>
+
+          <div class="field">
+            <label for="c-company">Empresa o negocio (opcional)</label>
+            <input id="c-company" name="company" type="text" placeholder="Nombre de tu negocio o empresa" />
+          </div>
+
+          <div class="field">
+            <label for="c-notes">¿Qué te gustaría construir o resolver? *</label>
+            <textarea
+              id="c-notes"
+              name="notes"
+              rows="4"
+              required
+              placeholder="Cuéntanos brevemente tu contexto, objetivo o qué te gustaría mejorar…"
+            ></textarea>
+          </div>
+
+          <div class="contact-feedback" role="status" hidden data-contact-feedback></div>
+
+          <button type="submit" class="btn btn-primary" data-contact-submit>
+            Enviar consulta →
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: start;
+  }
+
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.1rem;
+  }
+
+  .contact-meta-card,
+  .contact-assistant-card {
+    inline-size: 100%;
+    padding: 1.25rem 1.4rem;
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .contact-assistant-card {
+    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
+    border-color: rgba(243, 75, 33, 0.18);
+  }
+
+  .contact-assistant-card p {
+    font-size: var(--text-xs);
+    color: var(--ink-secondary);
+  }
+
+  .meta-label {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .meta-value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--ink-primary);
+  }
+
+  .contact-form-card {
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .field label {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--ink-primary);
+  }
+
+  .field input,
+  .field textarea {
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-canvas);
+    font-size: 1rem;
+  }
+
+  .contact-feedback {
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    background: var(--bg-warm-tint);
+    border: 1px solid rgba(243, 75, 33, 0.25);
+  }
+
+  .contact-feedback.is-ok {
+    background: var(--status-confirmed-bg);
+    border-color: var(--status-confirmed-border);
+    color: var(--status-confirmed-ink);
+  }
+
+  @media (max-width: 860px) {
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>("[data-contact-form]");
+  const feedback = document.querySelector<HTMLElement>("[data-contact-feedback]");
+  const submitBtn = document.querySelector<HTMLButtonElement>("[data-contact-submit]");
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!feedback || !submitBtn) return;
+
+    const fd = new FormData(form);
+    const name = String(fd.get("name") || "").trim();
+    const email = String(fd.get("email") || "").trim();
+    const company = String(fd.get("company") || "").trim();
+    const notes = String(fd.get("notes") || "").trim();
+    const honeypot = String(fd.get("honeypot") || "");
+
+    if (name.length < 2 || !email.includes("@") || notes.length < 6) {
+      feedback.classList.remove("is-ok");
+      feedback.textContent = "Completa tu nombre, un correo válido y una breve descripción de tu necesidad.";
+      feedback.hidden = false;
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Enviando…";
+
+    try {
+      const res = await fetch("/api/project-submit/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          company,
+          notes,
+          honeypot,
+          idempotencyKey: `contact-${Date.now()}`
+        })
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok) {
+        feedback.classList.add("is-ok");
+        feedback.textContent = data.message;
+        feedback.hidden = false;
+        form.reset();
+      } else if (data?.code === "missing_mail_config") {
+        feedback.classList.remove("is-ok");
+        feedback.innerHTML = `La recepción directa requiere configurar <code>RESEND_API_KEY</code> en el servidor. Mientras tanto puedes escribirnos directamente a <a href="mailto:hello@enix.studio?subject=${encodeURIComponent(`Consulta ENIX Studio — ${name}`)}&body=${encodeURIComponent(notes)}" style="text-decoration:underline;font-weight:700;">hello@enix.studio</a>.`;
+        feedback.hidden = false;
+      } else {
+        feedback.classList.remove("is-ok");
+        feedback.textContent = data?.message || "No pudimos enviar la consulta en este momento.";
+        feedback.hidden = false;
+      }
+    } catch {
+      feedback.classList.remove("is-ok");
+      feedback.textContent = "Error de conexión. Puedes escribirnos directamente a hello@enix.studio.";
+      feedback.hidden = false;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Enviar consulta →";
+    }
+  });
+</script>

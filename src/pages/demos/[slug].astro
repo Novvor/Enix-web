@@ -1,0 +1,117 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import InteractiveDemos from "@/components/marketing/InteractiveDemos";
+import { demonstrations, type DemonstrationItem } from "@/content/demonstrations";
+import { buildBreadcrumbSchema } from "@/lib/seo/schema";
+
+export function getStaticPaths() {
+  return demonstrations.map((demo) => ({
+    params: { slug: demo.slug },
+    props: { demo }
+  }));
+}
+
+interface Props {
+  demo: DemonstrationItem;
+}
+
+const { demo } = Astro.props;
+const others = demonstrations.filter((d) => d.slug !== demo.slug);
+const jsonLdNodes = [
+  buildBreadcrumbSchema([
+    { name: "Portada", path: "/" },
+    { name: "Demostraciones", path: "/demos/" },
+    { name: demo.title, path: `/demos/${demo.slug}/` }
+  ])
+];
+---
+
+<MarketingLayout
+  title={`${demo.title} (Demostración) — ENIX Studio`}
+  description={demo.summary}
+  jsonLdNodes={jsonLdNodes}
+>
+  <section class="section">
+    <div class="container">
+      <nav aria-label="Ruta de navegación" class="breadcrumb">
+        <a href="/">Portada</a> / <a href="/demos/">Demostraciones</a> / <span>{demo.title}</span>
+      </nav>
+
+      <div class="demo-single-head">
+        <div class="eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>{demo.tag}</span>
+        </div>
+        <h1 class="heading-xl">{demo.title}</h1>
+        <p class="lead">{demo.businessNeed}</p>
+      </div>
+
+      <InteractiveDemos client:load activeSlug={demo.slug} compact={false} darkSurface={false} />
+
+      <div style="margin-block-start: 3rem;">
+        <h2 class="heading-md" style="margin-block-end: 1rem;">Explorar otras demostraciones</h2>
+        <div class="other-demos-grid">
+          {others.map((o) => (
+            <a href={`/demos/${o.slug}/`} class="other-demo-card">
+              <strong>{o.title}</strong>
+              <span>{o.summary}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .breadcrumb {
+    font-size: var(--text-xs);
+    color: var(--ink-muted);
+    margin-block-end: 1.25rem;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+    color: var(--ink-primary);
+  }
+
+  .demo-single-head {
+    max-inline-size: 760px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+    margin-block-end: 2rem;
+  }
+
+  .other-demos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .other-demo-card {
+    padding: 1.35rem;
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .other-demo-card:hover {
+    border-color: var(--accent-orange);
+  }
+
+  .other-demo-card span {
+    font-size: var(--text-xs);
+    color: var(--ink-secondary);
+  }
+
+  @media (max-width: 680px) {
+    .other-demos-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

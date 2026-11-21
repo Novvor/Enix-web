@@ -1,0 +1,158 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import { processStages, siteConfig } from "@/content/site";
+---
+
+<MarketingLayout
+  title="Cómo trabajamos — ENIX Studio"
+  description="Etapas, entregables visibles y colaboración clara en cada proyecto digital de ENIX Studio."
+>
+  <section class="section">
+    <div class="container">
+      <div class="page-head">
+        <div class="eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>Proceso de trabajo</span>
+        </div>
+        <h1 class="heading-xl">Cuatro etapas claras, con entregables que puedes revisar</h1>
+        <p class="lead">
+          {siteConfig.responsibilityStatement} Trabajamos por hitos concretos para que siempre tengas visibilidad del avance y control de decisiones.
+        </p>
+      </div>
+
+      <ol class="stages-detail-list">
+        {processStages.map((stage) => (
+          <li class="stage-detail-card">
+            <div class="stage-detail-num">{stage.number}</div>
+            <div class="stage-detail-body">
+              <h2 class="heading-md">{stage.name}</h2>
+              <p class="stage-detail-desc">{stage.description}</p>
+              <div class="stage-meta-grid">
+                <div class="stage-meta-box">
+                  <span>Entregable visible</span>
+                  <strong>{stage.deliverable}</strong>
+                </div>
+                <div class="stage-meta-box">
+                  <span>Tu participación</span>
+                  <strong>{stage.clientParticipation}</strong>
+                </div>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div class="cta-strip">
+        <div>
+          <h2 class="heading-md">¿Quieres llegar a la primera conversación con tu alcance ordenado?</h2>
+          <p class="lead" style="font-size: var(--text-sm); margin-top: 0.35rem;">
+            Usa el asistente para armar tu ficha editable en pocos minutos.
+          </p>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.65rem;">
+          <a href="/create-project/" class="btn btn-primary">Definir mi proyecto →</a>
+          <a href="/contact/" class="btn btn-secondary">Hablar con el equipo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .page-head {
+    max-inline-size: 780px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-block-end: 3rem;
+  }
+
+  .stages-detail-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .stage-detail-card {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 1.25rem;
+    padding: 1.75rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .stage-detail-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 56px;
+    block-size: 56px;
+    border-radius: 16px;
+    background: var(--bg-warm-tint);
+    color: var(--accent-deep);
+    font-size: 1.15rem;
+    font-weight: 800;
+  }
+
+  .stage-detail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .stage-detail-desc {
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.65;
+  }
+
+  .stage-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-block-start: 0.35rem;
+  }
+
+  .stage-meta-box {
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    background: var(--bg-canvas);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: var(--text-xs);
+  }
+
+  .stage-meta-box span {
+    color: var(--ink-muted);
+    font-weight: 600;
+  }
+
+  .cta-strip {
+    margin-block-start: 2.5rem;
+    padding: 1.75rem 2rem;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
+    border: 1px solid rgba(243, 75, 33, 0.16);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 720px) {
+    .stage-detail-card {
+      grid-template-columns: 1fr;
+    }
+    .stage-meta-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

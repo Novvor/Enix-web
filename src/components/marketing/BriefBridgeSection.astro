@@ -1,0 +1,231 @@
+---
+---
+
+<section class="section bridge-section">
+  <div class="container">
+    <div class="bridge-grid">
+      <div class="bridge-copy">
+        <div class="eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>Cómo funciona «Tu proyecto»</span>
+        </div>
+        <h2 class="heading-lg">De tu idea a un alcance claro</h2>
+        <p class="lead">
+          No necesitas escribir un documento técnico. A medida que respondes preguntas simples, tu ficha separa lo que confirmas de las sugerencias que puedes aceptar, editar o quitar.
+        </p>
+
+        <div class="bridge-steps">
+          <div class="bridge-step">
+            <span class="bridge-step-num">1</span>
+            <div>
+              <strong>Respondes con tus palabras</strong>
+              <p>O eliges opciones rápidas si prefieres avanzar más ágilmente.</p>
+            </div>
+          </div>
+          <div class="bridge-step">
+            <span class="bridge-step-num">2</span>
+            <div>
+              <strong>La ficha distingue confirmado vs. sugerido</strong>
+              <p>Nada se da por sentado sin tu aprobación. Tus ediciones manuales siempre prevalecen.</p>
+            </div>
+          </div>
+          <div class="bridge-step">
+            <span class="bridge-step-num">3</span>
+            <div>
+              <strong>Descargas o compartes con ENIX</strong>
+              <p>Te llevas un resumen claro en Markdown, texto o PDF listo para evaluar.</p>
+            </div>
+          </div>
+        </div>
+
+        <a href="/create-project/" class="btn btn-primary" style="align-self: flex-start;">
+          Probar el asistente ahora →
+        </a>
+      </div>
+
+      <div class="bridge-visual" aria-label="Ejemplo de actualización de ficha de proyecto">
+        <div class="bridge-chat-card">
+          <span class="bridge-card-kicker">Conversación</span>
+          <div class="bridge-bubble-user">
+            «Necesito organizar los pedidos de mi distribuidora; hoy usamos WhatsApp y Excel.»
+          </div>
+          <div class="bridge-bubble-bot">
+            «Entendido: quieres centralizar pedidos para seguir su estado. ¿Quién necesita usar el sistema?»
+          </div>
+          <div class="bridge-pill-selected">Respuesta elegida: Ventas, administración y bodega</div>
+        </div>
+
+        <div class="bridge-arrow" aria-hidden="true">↓ Actualiza tu ficha al instante</div>
+
+        <div class="bridge-brief-card">
+          <div class="bridge-brief-head">
+            <strong>Sistema de pedidos — Distribuidora</strong>
+            <span class="brief-rev">Editable</span>
+          </div>
+          <div class="bridge-brief-row">
+            <span class="status-badge confirmed">Confirmado</span>
+            <span>Usuarios: Ventas, administración y bodega</span>
+          </div>
+          <div class="bridge-brief-row">
+            <span class="status-badge confirmed">Confirmado</span>
+            <span>Centralizar pedidos con estados visibles</span>
+          </div>
+          <div class="bridge-brief-row is-dashed">
+            <span class="status-badge suggested">Sugerido</span>
+            <span>Control básico de inventario (tú decides si incluirlo)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bridge-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+
+  .bridge-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .bridge-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-block: 0.5rem;
+  }
+
+  .bridge-step {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+  }
+
+  .bridge-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border-radius: 50%;
+    background: var(--bg-warm-tint);
+    color: var(--accent-deep);
+    font-size: var(--text-xs);
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .bridge-step strong {
+    display: block;
+    font-size: var(--text-sm);
+    margin-block-end: 0.15rem;
+  }
+
+  .bridge-step p {
+    font-size: var(--text-xs);
+    color: var(--ink-secondary);
+  }
+
+  .bridge-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.35rem;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(160deg, #fff5ef 0%, #f4edf5 100%);
+    border: 1px solid rgba(243, 75, 33, 0.16);
+  }
+
+  .bridge-chat-card,
+  .bridge-brief-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 1.05rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    box-shadow: var(--shadow-card);
+  }
+
+  .bridge-card-kicker {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+  }
+
+  .bridge-bubble-user {
+    align-self: flex-end;
+    background: var(--ink-primary);
+    color: var(--bg-surface);
+    padding: 0.6rem 0.85rem;
+    border-radius: 14px 14px 4px 14px;
+    font-size: var(--text-xs);
+    max-inline-size: 88%;
+  }
+
+  .bridge-bubble-bot {
+    align-self: flex-start;
+    background: var(--bg-canvas);
+    border: 1px solid var(--border-subtle);
+    padding: 0.6rem 0.85rem;
+    border-radius: 14px 14px 14px 4px;
+    font-size: var(--text-xs);
+    max-inline-size: 92%;
+  }
+
+  .bridge-pill-selected {
+    align-self: flex-start;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    background: var(--bg-warm-tint);
+    color: var(--accent-deep);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .bridge-arrow {
+    text-align: center;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--accent-deep);
+  }
+
+  .bridge-brief-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--text-sm);
+    padding-block-end: 0.45rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .bridge-brief-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: var(--text-xs);
+    padding: 0.45rem 0.6rem;
+    border-radius: 10px;
+    background: var(--bg-canvas);
+  }
+
+  .bridge-brief-row.is-dashed {
+    background: #fff9f6;
+    border: 1px dashed rgba(243, 75, 33, 0.34);
+  }
+
+  @media (max-width: 900px) {
+    .bridge-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

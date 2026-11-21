@@ -1,0 +1,204 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import { marketingServices, type MarketingServiceItem } from "@/content/marketing";
+import { buildBreadcrumbSchema, buildServiceSchema } from "@/lib/seo/schema";
+
+export function getStaticPaths() {
+  return marketingServices.map((service) => ({
+    params: { slug: service.slug },
+    props: { service }
+  }));
+}
+
+interface Props {
+  service: MarketingServiceItem;
+}
+
+const { service } = Astro.props;
+const jsonLdNodes = [
+  buildBreadcrumbSchema([
+    { name: "Portada", path: "/" },
+    { name: "Marketing", path: "/marketing/" },
+    { name: service.name, path: `/marketing/${service.slug}/` }
+  ]),
+  buildServiceSchema({
+    name: service.name,
+    description: service.intro,
+    path: `/marketing/${service.slug}/`,
+    serviceType: service.isComplementary ? "Branding y diseño de marca" : "Marketing digital"
+  })
+];
+---
+
+<MarketingLayout
+  title={`${service.name} — Marketing digital ENIX Studio`}
+  description={service.intro}
+  jsonLdNodes={jsonLdNodes}
+>
+  <section class="section">
+    <div class="container">
+      <nav aria-label="Ruta de navegación" class="breadcrumb">
+        <a href="/">Portada</a> / <a href="/marketing/">Marketing</a> / <span>{service.name}</span>
+      </nav>
+
+      <div class="srv-hero">
+        <div class="eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>{service.eyebrow}</span>
+        </div>
+        <h1 class="heading-xl">{service.headline}</h1>
+        <p class="lead">{service.intro}</p>
+        <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.35rem;">
+          <a
+            href={`/create-project/?category=${service.slug}`}
+            class="btn btn-primary"
+            data-srv-prompt={service.starterPrompt}
+            data-srv-slug={service.slug}
+          >
+            Definir {service.name.toLowerCase()} en el asistente →
+          </a>
+          <a href="/contact/" class="btn btn-secondary">Hablar con el equipo</a>
+        </div>
+      </div>
+
+      <div class="srv-grid">
+        <article class="srv-card">
+          <h2 class="heading-md">Objetivos de negocio que aborda</h2>
+          <ul class="srv-list">
+            {service.businessObjectives.map((obj) => (
+              <li>{obj}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="srv-card">
+          <h2 class="heading-md">Entregables que puedes recibir</h2>
+          <ul class="srv-list">
+            {service.deliverables.map((d) => (
+              <li>{d}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="srv-card">
+          <h2 class="heading-md">Modalidad y alcance</h2>
+          <p class="srv-copy">{service.modalityNote}</p>
+        </article>
+
+        <article class="srv-card">
+          <h2 class="heading-md">Cómo acordamos indicadores</h2>
+          <p class="srv-copy">{service.indicatorsNote}</p>
+        </article>
+      </div>
+
+      <div class="srv-related">
+        <h2 class="heading-md" style="margin-block-end: 1rem;">Cómo se conecta con el resto de ENIX Studio</h2>
+        <div class="srv-related-grid">
+          {service.relatedTech.map((rel) => (
+            <a href={rel.href} class="srv-rel-card">
+              <strong>{rel.label} →</strong>
+              <span>{rel.reason}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .breadcrumb {
+    font-size: var(--text-xs);
+    color: var(--ink-muted);
+    margin-block-end: 1.25rem;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+    color: var(--ink-primary);
+  }
+
+  .srv-hero {
+    max-inline-size: 820px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-block-end: 3rem;
+  }
+
+  .srv-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .srv-card {
+    padding: 1.65rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .srv-copy {
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.65;
+  }
+
+  .srv-list {
+    padding-inline-start: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: var(--text-sm);
+    color: var(--ink-primary);
+  }
+
+  .srv-related {
+    margin-block-start: 2.75rem;
+  }
+
+  .srv-related-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .srv-rel-card {
+    padding: 1.35rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
+    border: 1px solid rgba(243, 75, 33, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .srv-rel-card span {
+    font-size: var(--text-xs);
+    color: var(--ink-secondary);
+  }
+
+  @media (max-width: 760px) {
+    .srv-grid,
+    .srv-related-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { saveStarterIdea } from "@/lib/project/storage";
+
+  document.querySelectorAll<HTMLAnchorElement>("[data-srv-prompt]").forEach((el) => {
+    el.addEventListener("click", () => {
+      const prompt = el.dataset.srvPrompt || "";
+      const slug = el.dataset.srvSlug || null;
+      if (prompt) saveStarterIdea(prompt, slug);
+    });
+  });
+</script>

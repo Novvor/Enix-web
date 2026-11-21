@@ -1,0 +1,267 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import { solutions, type SolutionItem } from "@/content/solutions";
+import { siteConfig } from "@/content/site";
+import { buildBreadcrumbSchema, buildServiceSchema } from "@/lib/seo/schema";
+
+export function getStaticPaths() {
+  return solutions.map((solution) => ({
+    params: { slug: solution.slug },
+    props: { solution }
+  }));
+}
+
+interface Props {
+  solution: SolutionItem;
+}
+
+const { solution } = Astro.props;
+const others = solutions.filter((s) => s.slug !== solution.slug).slice(0, 3);
+const jsonLdNodes = [
+  buildBreadcrumbSchema([
+    { name: "Portada", path: "/" },
+    { name: "Soluciones", path: "/solutions/" },
+    { name: solution.name, path: `/solutions/${solution.slug}/` }
+  ]),
+  buildServiceSchema({
+    name: `${solution.name} a medida`,
+    description: solution.intro,
+    path: `/solutions/${solution.slug}/`,
+    serviceType: solution.name
+  })
+];
+---
+
+<MarketingLayout
+  title={`${solution.name} a medida — ENIX Studio`}
+  description={solution.intro}
+  jsonLdNodes={jsonLdNodes}
+>
+  <section class="section">
+    <div class="container">
+      <nav aria-label="Ruta de navegación" class="breadcrumb">
+        <a href="/">Portada</a> / <a href="/solutions/">Soluciones</a> / <span>{solution.name}</span>
+      </nav>
+
+      <div class="sol-hero">
+        <div class="eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          <span>{solution.eyebrow}</span>
+        </div>
+        <h1 class="heading-xl">{solution.headline}</h1>
+        <p class="lead">{solution.intro}</p>
+        <div class="sol-hero-actions">
+          <a
+            href={`/create-project/?category=${solution.slug}`}
+            class="btn btn-primary"
+            data-start-category={solution.slug}
+            data-start-prompt={solution.starterPrompt}
+          >
+            Definir mi proyecto de {solution.name.toLowerCase()} →
+          </a>
+          <a href="/contact/" class="btn btn-secondary">Hablar con el equipo</a>
+        </div>
+      </div>
+
+      <div class="sol-detail-grid">
+        <article class="sol-block">
+          <h2 class="heading-md">Para quién es</h2>
+          <ul class="sol-list">
+            {solution.forWhom.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="sol-block">
+          <h2 class="heading-md">Qué problema aborda</h2>
+          <p class="sol-copy">{solution.problemSolved}</p>
+        </article>
+
+        <article class="sol-block">
+          <h2 class="heading-md">Qué puede incluir</h2>
+          <ul class="sol-list">
+            {solution.canInclude.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+
+        <article class="sol-block sol-example-block">
+          <span class="sol-kicker">Ejemplo de aplicación</span>
+          <h2 class="heading-md">{solution.exampleTitle}</h2>
+          <p class="sol-copy">{solution.exampleSummary}</p>
+          <ul class="sol-list">
+            {solution.exampleHighlights.map((h) => (
+              <li>{h}</li>
+            ))}
+          </ul>
+        </article>
+      </div>
+
+      <div class="sol-start-banner">
+        <div>
+          <h2 class="heading-md">Cómo comenzar</h2>
+          <p class="sol-copy" style="margin-block-start: 0.45rem;">{solution.howToStart}</p>
+          <p style="font-size: var(--text-xs); color: var(--ink-muted); margin-block-start: 0.5rem;">
+            {siteConfig.responsibilityStatement}
+          </p>
+        </div>
+        <a
+          href={`/create-project/?category=${solution.slug}`}
+          class="btn btn-primary"
+          data-start-category={solution.slug}
+          data-start-prompt={solution.starterPrompt}
+        >
+          Empezar con esta categoría →
+        </a>
+      </div>
+
+      <div class="related-block">
+        <h2 class="heading-md" style="margin-block-end: 1rem;">Otras soluciones que pueden combinarse</h2>
+        <div class="related-grid">
+          {others.map((o) => (
+            <a href={`/solutions/${o.slug}/`} class="related-card">
+              <strong>{o.name}</strong>
+              <span>{o.shortDescription}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .breadcrumb {
+    font-size: var(--text-xs);
+    color: var(--ink-muted);
+    margin-block-end: 1.25rem;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+    color: var(--ink-primary);
+  }
+
+  .sol-hero {
+    max-inline-size: 820px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-block-end: 3rem;
+  }
+
+  .sol-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-block-start: 0.4rem;
+  }
+
+  .sol-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .sol-block {
+    padding: 1.65rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .sol-example-block {
+    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
+    border-color: rgba(243, 75, 33, 0.2);
+  }
+
+  .sol-kicker {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-deep);
+  }
+
+  .sol-copy {
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.65;
+  }
+
+  .sol-list {
+    padding-inline-start: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: var(--text-sm);
+    color: var(--ink-primary);
+  }
+
+  .sol-start-banner {
+    margin-block-start: 2rem;
+    padding: 1.75rem 2rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+
+  .related-block {
+    margin-block-start: 3rem;
+  }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .related-card {
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .related-card:hover {
+    border-color: var(--accent-orange);
+  }
+
+  .related-card span {
+    font-size: var(--text-xs);
+    color: var(--ink-secondary);
+  }
+
+  @media (max-width: 820px) {
+    .sol-detail-grid,
+    .related-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { saveStarterIdea } from "@/lib/project/storage";
+
+  document.querySelectorAll<HTMLAnchorElement>("[data-start-category]").forEach((link) => {
+    link.addEventListener("click", () => {
+      const category = link.dataset.startCategory || null;
+      const prompt = link.dataset.startPrompt || "";
+      if (prompt) saveStarterIdea(prompt, category);
+    });
+  });
+</script>

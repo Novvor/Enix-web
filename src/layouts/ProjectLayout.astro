@@ -1,0 +1,40 @@
+---
+import "@fontsource-variable/plus-jakarta-sans";
+import "@/styles/tokens.css";
+import "@/styles/global.css";
+import SeoHead from "@/components/seo/SeoHead.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Tu proyecto — Asistente de proyectos ENIX Studio",
+  description = "Define tu proyecto digital o de marketing paso a paso y obtén una ficha editable lista para descargar o revisar con el equipo de ENIX Studio."
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <SeoHead
+      title={title}
+      description={description}
+      pathname={Astro.url.pathname}
+      noindex={true}
+      robots="noindex, follow"
+      omitCanonical={true}
+    />
+  </head>
+  <body class="workspace-body">
+    <a href="#espacio-proyecto" class="skip-link visually-hidden">Saltar al espacio de proyecto</a>
+    <slot />
+  </body>
+</html>
+
+<style>
+  .workspace-body {
+    background: var(--bg-canvas);
+  }
+</style>

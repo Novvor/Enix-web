@@ -1,0 +1,89 @@
+---
+import { siteConfig } from "@/content/site";
+import {
+  buildJsonLdGraph,
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+  normalizeCanonicalUrl
+} from "@/lib/seo/schema";
+
+interface Props {
+  title?: string;
+  description?: string;
+  pathname: string;
+  robots?: string;
+  noindex?: boolean;
+  omitCanonical?: boolean;
+  ogImage?: string;
+  ogType?: "website" | "article";
+  jsonLdNodes?: Record<string, unknown>[];
+}
+
+const {
+  title = siteConfig.defaultTitle,
+  description = siteConfig.defaultDescription,
+  pathname,
+  robots,
+  noindex = false,
+  omitCanonical = false,
+  ogImage = "/og-enix-studio.svg",
+  ogType = "website",
+  jsonLdNodes = []
+} = Astro.props;
+
+const isPreviewDeploy =
+  typeof process !== "undefined" &&
+  process.env?.VERCEL_ENV !== undefined &&
+  process.env.VERCEL_ENV !== "production";
+
+const effectiveNoindex = noindex || isPreviewDeploy;
+const effectiveRobots =
+  robots ||
+  (effectiveNoindex
+    ? "noindex, nofollow"
+    : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1");
+
+const canonicalUrl = normalizeCanonicalUrl(pathname);
+const ogImageUrl = new URL(ogImage, siteConfig.siteUrl).toString();
+
+const graphNodes: Record<string, unknown>[] = [
+  buildOrganizationSchema(),
+  buildWebSiteSchema(),
+  ...jsonLdNodes
+];
+const structuredData = JSON.stringify(buildJsonLdGraph(graphNodes));
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="robots" content={effectiveRobots} />
+{!omitCanonical && !effectiveNoindex && <link rel="canonical" href={canonicalUrl} />}
+
+<!-- Favicons & App Manifest -->
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta name="theme-color" content="#FAF8F6" />
+
+<!-- Open Graph / Social -->
+<meta property="og:type" content={ogType} />
+<meta property="og:locale" content="es_CL" />
+<meta property="og:site_name" content={siteConfig.brandName} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+{!omitCanonical && <meta property="og:url" content={canonicalUrl} />}
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:image:alt" content={title} />
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImageUrl} />
+
+<!-- Structured Data (JSON-LD) -->
+{!omitCanonical && <script type="application/ld+json" set:html={structuredData} />}

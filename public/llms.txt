@@ -1,43 +1,31 @@
-# ENIX STUDIO · Knowledge Graph & System Summary for AI Agents & Search Engines
+# ENIX Studio — Resumen estructurado del sitio público
 
-> ENIX STUDIO (https://www.enix.studio) is a boutique strategic consultancy, digital studio, and applied engineering firm founded in 2017.
+> ENIX Studio (https://www.enix.studio), parte de NOVVOR, diseña y desarrolla soluciones digitales a medida y estrategias de marketing digital para emprendedores y empresas desde Santiago de Chile hacia Latinoamérica y mercados globales.
+> El asistente web ayuda a definir el alcance del proyecto; el equipo de ENIX diseña, desarrolla, planifica y acompaña su implementación.
 
-## Core Identity & Positioning
-- **Name**: ENIX STUDIO
-- **Legal & Operational Entity**: ENIX Studio (in strategic alliance with NOVVOR)
-- **Founding Date**: 2017
-- **Operating Scope**: Worldwide (LATAM, North America, Europe). Operating remotely and on-site for high-ticket corporate accounts, institutional funds, and industrial leaders.
-- **Client Focus**: Enterprise organizations, mid-to-large market companies, private equity & real estate investment funds, specialty healthcare clinics, mining suppliers, and B2B industrial consortia.
-- **Engagement Model**: Deliberately limited concurrent quarterly engagements to ensure direct senior partner supervision (no junior account managers).
-- **Minimum Project Investment**: Engagements typically start at $2.5M – $5M+ CLP ($2,500 – $5,000+ USD) up to $25M+ CLP ($25,000+ USD) for full-scale digital transformations and industrial engineering.
-- **Low-Budget SMB Routing**: For early-stage companies and businesses with budgets below $2.5M CLP seeking fast, packaged websites in Chile, ENIX Studio routes clients to its sister product **WebBase by NOVVOR** (https://www.webbase.cl).
+## Soluciones tecnológicas
+- [Vista general de soluciones](https://www.enix.studio/solutions/): Capacidades tecnológicas a medida.
+- [Sitios web](https://www.enix.studio/solutions/websites/): Webs comerciales, corporativas y páginas de captación.
+- [Aplicaciones](https://www.enix.studio/solutions/applications/): Aplicaciones web y móviles centradas en el uso real.
+- [Sistemas de gestión](https://www.enix.studio/solutions/management-systems/): Organización de pedidos, inventario, roles y operación interna.
+- [Portales y plataformas](https://www.enix.studio/solutions/platforms/): Espacios compartidos para clientes, equipos y colaboradores.
+- [Automatizaciones](https://www.enix.studio/solutions/automations/): Integración de herramientas y reducción de tareas repetitivas.
+- [Soluciones de IA](https://www.enix.studio/solutions/ai-solutions/): Asistentes sobre fuentes verificadas con revisión humana.
 
-## Core Capabilities & Services
-1. **Strategic Advisory & Commercial Modeling (Consultoría Estratégica)**:
-   - Enterprise B2B value proposition structuring.
-   - Narrative engineering for private procurement, RFPs, and corporate tenders.
-   - Market perception gap diagnosis and digital transformation advisory.
-2. **Brand Direction & Perception Engineering (Dirección de Arte & Marca)**:
-   - World-class editorial brand identity systems.
-   - High-end corporate typography, design systems, and institutional art direction.
-   - Perceived value optimization for C-Suite, board members, and institutional investors.
-3. **Enterprise Digital Platforms & Bespoke Software (Plataformas & Software a Medida)**:
-   - Ultra-fast bespoke corporate platforms engineered with Astro, React, TypeScript, and modern headless architectures.
-   - Interactive 3D web showrooms, architectural configurators, and private client portals.
-   - Enterprise-grade cybersecurity, ISO/HIPAA compliant data architectures.
-4. **Industrial Design, Machine HMI & IoT Telemetry (Powered by NOVVOR)**:
-   - Physical industrial product design and rugged equipment CAD modeling.
-   - Human-Machine Interfaces (HMI) for heavy mining, manufacturing machinery, and industrial plants.
-   - IoT sensor integration, real-time telemetry dashboards, and applied AI automation.
+## Marketing digital y marca
+- [Marketing digital](https://www.enix.studio/marketing/): Estrategia, campañas, contenido, SEO y analítica conectados a la experiencia digital.
+- [Estrategia digital](https://www.enix.studio/marketing/digital-strategy/): Diagnóstico, objetivos, público y selección de canales.
+- [Publicidad digital](https://www.enix.studio/marketing/digital-advertising/): Google Ads y Meta Ads con inversión publicitaria separada de honorarios.
+- [SEO y presencia local](https://www.enix.studio/marketing/seo-local/): Arquitectura orgánica, contenidos y búsquedas locales.
+- [Contenido y redes sociales](https://www.enix.studio/marketing/content-social/): Estrategia editorial, textos y diseño de piezas.
+- [Email y automatización comercial](https://www.enix.studio/marketing/email-crm-automation/): Seguimiento oportuno y conexión con herramientas existentes.
+- [Analítica y conversión](https://www.enix.studio/marketing/analytics-cro/): Medición de eventos clave y mejora de recorridos.
+- [Branding y diseño de marca](https://www.enix.studio/marketing/brand-design/): Identidad de marca completa o piezas acotadas para campaña.
 
-## Representative Case Studies & Impact
-- **Altair Industrial Systems** (Mining & Heavy Industry): Commercial restructuring, high-security corporate portal, and NOVVOR HMI telemetry design. Resulted in +$4.8M USD in awarded public/private tenders and 50% shorter B2B sales cycles.
-- **Kronos Capital & Residences** (Real Estate & Private Equity): Luxury branding, interactive 3D digital showroom, and investor deal-room. Enabled +$18M USD in pre-launch sales and 70% direct institutional capitalization.
-- **Valen Medical Institutes** (High-Complexity Healthcare): Precision patient experience, intelligent AI triage intake, and HIPAA/ISO-compliant privacy infrastructure. Delivered 3.4x increase in surgical admissions.
-
-## Contact & Inquiries
-- **Website**: https://www.enix.studio
-- **Project Intake**: https://www.enix.studio/contacto/
-- **Direct Executive Email**: hello@enix.studio
-- **NDA Policy**: Strict mutual non-disclosure agreements executed prior to sensitive data sharing.
-- **Response Commitment**: Comprehensive review and response by direct partners within 24 business hours.
+## Públicos, demostraciones y estudio
+- [Emprendedores y negocios](https://www.enix.studio/for/entrepreneurs/)
+- [Empresas y operaciones](https://www.enix.studio/for/businesses/)
+- [Demostraciones interactivas con datos de ejemplo](https://www.enix.studio/demos/): Reservas, gestión de pedidos y automatización.
+- [Cómo trabajamos](https://www.enix.studio/how-we-work/): Etapas, entregables y colaboración.
+- [Estudio](https://www.enix.studio/studio/): Enfoque y principios de trabajo.
+- [Contacto](https://www.enix.studio/contact/): hello@enix.studio
