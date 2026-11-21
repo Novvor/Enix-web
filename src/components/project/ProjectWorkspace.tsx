@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   Download,
+  Eye,
   FileText,
   Mail,
   Plus,
@@ -12,7 +13,8 @@ import {
   RotateCcw,
   Send,
   Sparkles,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 import {
   CATEGORY_LABELS,
@@ -59,8 +61,6 @@ import { siteConfig } from "@/content/site";
 import { trackProjectEvent } from "@/lib/analytics/events";
 import "./workspace.css";
 
-const STAGES: ProjectStage[] = ["idea", "needs", "priorities", "summary"];
-
 function uid(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
@@ -76,16 +76,14 @@ export default function ProjectWorkspace() {
   const [turnError, setTurnError] = useState<string | null>(null);
   const [assistantMode, setAssistantMode] = useState<"guided" | "ai">("guided");
   const [submissionConnected, setSubmissionConnected] = useState<boolean>(false);
-  const [storageWarning, setStorageWarning] = useState<boolean>(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>("");
-  const [mobileTab, setMobileTab] = useState<"step" | "brief">("step");
-  const [briefUpdatedUnseen, setBriefUpdatedUnseen] = useState<boolean>(false);
-  const [briefPulse, setBriefPulse] = useState<boolean>(false);
   const [newReqText, setNewReqText] = useState("");
   const [manualFields] = useState<Set<string>>(() => new Set());
   const [hydrated, setHydrated] = useState(false);
 
-  // Direct submit form state (shown directly on Summary step for zero friction)
+  const previewDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  // Direct submit form state
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactCompany, setContactCompany] = useState("");
@@ -107,8 +105,7 @@ export default function ProjectWorkspace() {
     const params = new URLSearchParams(window.location.search);
     const urlCategory = params.get("category") || params.get("categoria");
     const starter = consumeStarterIdea();
-    const { draft, storageAvailable } = loadProjectDraft();
-    setStorageWarning(!storageAvailable);
+    const { draft } = loadProjectDraft();
 
     if (starter && starter.idea) {
       const init = startGuidedSession(starter.idea, starter.category || urlCategory);
@@ -136,7 +133,6 @@ export default function ProjectWorkspace() {
       ]);
       setStage(init.stage);
       setStepIndex(init.stepIndex);
-      setLiveAnnouncement("Tu idea inicial ya está cargada en tu ficha de proyecto.");
       trackProjectEvent("enix_project_start", {
         track: init.track,
         category: nextBrief.category || "undetermined"
@@ -175,7 +171,7 @@ export default function ProjectWorkspace() {
           role: "assistant",
           stage: init.stage,
           stepId: init.stepId,
-          interpretation: "Elige una opción o cuéntanos tu idea con tus palabras para armar tu ficha paso a paso.",
+          interpretation: "Responde unos pasos rápidos y armamos juntos tu ficha lista para evaluar.",
           text: init.question,
           options: init.options,
           createdAt: new Date().toISOString()
@@ -222,7 +218,7 @@ export default function ProjectWorkspace() {
 
   const progressPct = Math.min(
     100,
-    Math.round(((stepIndex + (isSummaryStep ? 1 : 0.4)) / activeSteps.length) * 100)
+    Math.round(((stepIndex + (isSummaryStep ? 1 : 0.35)) / activeSteps.length) * 100)
   );
 
   const essentialRequirements = useMemo(
@@ -234,10 +230,21 @@ export default function ProjectWorkspace() {
     [brief.requirements]
   );
 
-  function triggerBriefPulse() {
-    setBriefPulse(true);
-    window.setTimeout(() => setBriefPulse(false), 520);
-  }
+  const compactSummaryChips = useMemo(() => {
+    const chips: string[] = [];
+    if (brief.category && CATEGORY_LABELS[brief.category]) {
+      chips.push(CATEGORY_LABELS[brief.category]);
+    }
+    if (brief.targetAudienceAndTerritory) {
+      chips.push(brief.targetAudienceAndTerritory.slice(0, 36));
+    } else if (brief.users[0]?.text) {
+      chips.push(brief.users[0].text.slice(0, 36));
+    }
+    if (brief.declaredTimeline && brief.declaredTimeline !== "Por definir") {
+      chips.push(brief.declaredTimeline.slice(0, 32));
+    }
+    return chips;
+  }, [brief]);
 
   async function submitTurn(answerText: string, displayLabel?: string, isSelection = false) {
     const clean = answerText.trim();
@@ -250,16 +257,17 @@ export default function ProjectWorkspace() {
     const stepId = currentStep.id;
     const expectedRev = brief.revision;
 
-    const userMsg: ChatMessage = {
-      id: uid("usr"),
-      role: "user",
-      stage,
-      stepId,
-      text: userDisplay,
-      createdAt: new Date().toISOString()
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: uid("usr"),
+        role: "user",
+        stage,
+        stepId,
+        text: userDisplay,
+        createdAt: new Date().toISOString()
+      }
+    ]);
     setInputText("");
     setAnswers((prev) => ({ ...prev, [stepId]: userDisplay }));
 
@@ -280,9 +288,7 @@ export default function ProjectWorkspace() {
         });
         if (res.ok) {
           const data = await res.json();
-          if (data?.ok && data.question) {
-            turnResult = data;
-          }
+          if (data?.ok && data.question) turnResult = data;
         }
       }
 
@@ -320,9 +326,8 @@ export default function ProjectWorkspace() {
         }
       ]);
 
-      triggerBriefPulse();
-      if (mobileTab === "step") setBriefUpdatedUnseen(true);
-      setLiveAnnouncement("Avanzaste al siguiente paso y tu ficha se actualizó.");
+      setLiveAnnouncement("Avanzaste al siguiente paso.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setTurnError("Hubo un problema al procesar este paso, pero tus respuestas siguen guardadas.");
     } finally {
@@ -364,19 +369,19 @@ export default function ProjectWorkspace() {
         role: "assistant",
         stage: "summary",
         stepId: "summary",
-        interpretation: "Puedes revisar tu ficha y enviarla ahora mismo al equipo de ENIX Studio.",
+        interpretation: "Tu ficha está lista para revisar y enviar.",
         text: sumQ.question,
         options: [],
         createdAt: new Date().toISOString()
       }
     ]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleResetDraft() {
     clearProjectDraft();
-    const empty = createEmptyBrief("", null, "development");
     const init = startGuidedSession("", null);
-    setBrief(empty);
+    setBrief(createEmptyBrief("", null, "development"));
     setStage("idea");
     setStepIndex(0);
     setAnswers({});
@@ -393,7 +398,6 @@ export default function ProjectWorkspace() {
         createdAt: new Date().toISOString()
       }
     ]);
-    setLiveAnnouncement("Proyecto reiniciado.");
   }
 
   function handleAddManualReq(e: React.FormEvent) {
@@ -401,7 +405,6 @@ export default function ProjectWorkspace() {
     if (!newReqText.trim()) return;
     setBrief((prev) => addManualRequirement(prev, "requirements", newReqText, "initial"));
     setNewReqText("");
-    triggerBriefPulse();
   }
 
   function handleDownloadMd() {
@@ -440,28 +443,20 @@ export default function ProjectWorkspace() {
           track: brief.track,
           category: brief.category || "undetermined"
         });
-        setSendState({
-          kind: "success",
-          referenceId: data.referenceId,
-          message: data.message
-        });
+        setSendState({ kind: "success", referenceId: data.referenceId, message: data.message });
       } else if (data?.code === "missing_mail_config") {
         setSendState({
           kind: "unconfigured",
-          message:
-            "Este entorno aún no tiene configurada RESEND_API_KEY. Puedes descargar tu resumen o abrirlo en tu correo."
+          message: "Este entorno aún no tiene configurada RESEND_API_KEY. Puedes descargar tu resumen o abrirlo en tu correo."
         });
       } else {
         setSendState({
           kind: "error",
-          message: data?.message || "No pudimos enviar tu ficha en este momento. Puedes descargarla y enviarla por correo."
+          message: data?.message || "No pudimos enviar tu ficha en este momento."
         });
       }
     } catch {
-      setSendState({
-        kind: "error",
-        message: "Error de conexión al intentar enviar. Tu borrador sigue guardado."
-      });
+      setSendState({ kind: "error", message: "Error de conexión al intentar enviar. Tu borrador sigue guardado." });
     }
   }
 
@@ -472,10 +467,7 @@ export default function ProjectWorkspace() {
   ) => (
     <ul className="brief-req-list">
       {items.map((item) => (
-        <li
-          key={item.id}
-          className={`brief-req-item ${item.status === "suggested" ? "is-suggested" : ""}`}
-        >
+        <li key={item.id} className={`brief-req-item ${item.status === "suggested" ? "is-suggested" : ""}`}>
           <div className="brief-req-top">
             <span className="brief-req-text">{item.text}</span>
             <span className={`status-badge ${item.status}`}>{STATUS_LABELS[item.status]}</span>
@@ -497,12 +489,7 @@ export default function ProjectWorkspace() {
                 className="brief-mini-btn"
                 onClick={() =>
                   setBrief((prev) =>
-                    toggleRequirementPriority(
-                      prev,
-                      bucket,
-                      item.id,
-                      item.priority === "later" ? "initial" : "later"
-                    )
+                    toggleRequirementPriority(prev, bucket, item.id, item.priority === "later" ? "initial" : "later")
                   )
                 }
               >
@@ -522,13 +509,229 @@ export default function ProjectWorkspace() {
     </ul>
   );
 
+  const renderEditableBriefContent = () => (
+    <>
+      <div className="brief-head-meta">
+        <span className="eyebrow" style={{ paddingBlock: "0.22rem", fontSize: "0.72rem" }}>
+          <span className="eyebrow-dot" aria-hidden="true" />
+          Ficha editable · {TRACK_LABELS[brief.track || "development"]}
+        </span>
+        <div style={{ display: "flex", gap: "0.4rem" }} className="no-print">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={handleDownloadMd}>
+            <Download size={13} aria-hidden="true" />
+            <span>.md</span>
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={handleDownloadTxt}>
+            <FileText size={13} aria-hidden="true" />
+            <span>.txt</span>
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
+            <Printer size={13} aria-hidden="true" />
+            <span>PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor={titleInputId} className="visually-hidden">
+          Título provisional del proyecto
+        </label>
+        <input
+          id={titleInputId}
+          type="text"
+          className="brief-editable-title"
+          value={brief.title}
+          placeholder="Título de tu proyecto"
+          onChange={(e) => {
+            manualFields.add("title");
+            setBrief((prev) => ({
+              ...prev,
+              title: e.target.value,
+              revision: prev.revision + 1,
+              updatedAt: new Date().toISOString()
+            }));
+          }}
+        />
+      </div>
+
+      <div className="brief-section">
+        <label htmlFor={goalInputId} className="brief-section-title">
+          Objetivo principal (editable)
+        </label>
+        <textarea
+          id={goalInputId}
+          rows={2}
+          className="brief-editable-goal"
+          value={brief.goal}
+          placeholder="Resume qué quieres lograr…"
+          onChange={(e) => {
+            manualFields.add("goal");
+            setBrief((prev) => ({
+              ...prev,
+              goal: e.target.value,
+              revision: prev.revision + 1,
+              updatedAt: new Date().toISOString()
+            }));
+          }}
+        />
+      </div>
+
+      <dl className="brief-kv-grid">
+        <div className="brief-kv">
+          <dt>{isMarketingOrCombined ? "Línea principal" : "Tipo de solución"}</dt>
+          <dd>{brief.category ? CATEGORY_LABELS[brief.category] || brief.category : "Por definir"}</dd>
+        </div>
+        <div className="brief-kv">
+          <dt>Fechas / plazo</dt>
+          <dd>{brief.declaredTimeline || "Por definir"}</dd>
+        </div>
+        {isMarketingOrCombined && (
+          <div className="brief-kv">
+            <dt>Modalidad</dt>
+            <dd>
+              <select
+                aria-label="Modalidad de trabajo"
+                value={brief.engagementModality || "undecided"}
+                onChange={(e) => {
+                  manualFields.add("engagementModality");
+                  setBrief((prev) => ({
+                    ...prev,
+                    engagementModality: e.target.value as EngagementModality,
+                    revision: prev.revision + 1,
+                    updatedAt: new Date().toISOString()
+                  }));
+                }}
+                style={{
+                  width: "100%",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: 8,
+                  padding: "0.2rem 0.4rem",
+                  background: "var(--bg-surface)",
+                  fontSize: "0.78rem",
+                  fontWeight: 700
+                }}
+              >
+                <option value="undecided">{MODALITY_LABELS.undecided}</option>
+                <option value="one-time">{MODALITY_LABELS["one-time"]}</option>
+                <option value="ongoing">{MODALITY_LABELS.ongoing}</option>
+              </select>
+            </dd>
+          </div>
+        )}
+        {isMarketingOrCombined && (
+          <div className="brief-kv">
+            <dt>Público y territorio</dt>
+            <dd>{brief.targetAudienceAndTerritory || "Por definir"}</dd>
+          </div>
+        )}
+      </dl>
+
+      {isMarketingOrCombined && (
+        <div className="brief-kv-grid">
+          <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label htmlFor="brief-ad-spend" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+              Inversión publicitaria (anuncios)
+            </label>
+            <input
+              id="brief-ad-spend"
+              type="text"
+              className="brief-add-input"
+              value={brief.adSpendBudget || ""}
+              placeholder="Por definir (separado de honorarios)"
+              onChange={(e) => {
+                manualFields.add("adSpendBudget");
+                setBrief((prev) => ({
+                  ...prev,
+                  adSpendBudget: e.target.value || null,
+                  revision: prev.revision + 1,
+                  updatedAt: new Date().toISOString()
+                }));
+              }}
+            />
+          </div>
+          <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label htmlFor="brief-service-budget" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+              Presupuesto de servicios (honorarios)
+            </label>
+            <input
+              id="brief-service-budget"
+              type="text"
+              className="brief-add-input"
+              value={brief.serviceBudget || ""}
+              placeholder="Por definir según alcance"
+              onChange={(e) => {
+                manualFields.add("serviceBudget");
+                setBrief((prev) => ({
+                  ...prev,
+                  serviceBudget: e.target.value || null,
+                  revision: prev.revision + 1,
+                  updatedAt: new Date().toISOString()
+                }));
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {brief.users.length > 0 && (
+        <div className="brief-section">
+          <h3 className="brief-section-title">Personas usuarias</h3>
+          {renderRequirementList(brief.users, "users", false)}
+        </div>
+      )}
+
+      <div className="brief-section">
+        <h3 className="brief-section-title">Lo esencial para empezar</h3>
+        {essentialRequirements.length > 0 ? (
+          renderRequirementList(essentialRequirements, "requirements", true)
+        ) : (
+          <p style={{ fontSize: "var(--text-xs)", color: "var(--ink-muted)" }}>
+            Aún no hay requisitos registrados.
+          </p>
+        )}
+
+        <form className="brief-add-row no-print" onSubmit={handleAddManualReq}>
+          <label htmlFor="add-req-input" className="visually-hidden">
+            Agregar requisito manual
+          </label>
+          <input
+            id="add-req-input"
+            type="text"
+            className="brief-add-input"
+            placeholder="Agregar otro detalle o requisito…"
+            value={newReqText}
+            onChange={(e) => setNewReqText(e.target.value)}
+          />
+          <button type="submit" className="btn btn-secondary btn-sm">
+            <Plus size={14} aria-hidden="true" />
+            <span>Sumar</span>
+          </button>
+        </form>
+      </div>
+
+      {laterRequirements.length > 0 && (
+        <div className="brief-section">
+          <h3 className="brief-section-title">Para después</h3>
+          {renderRequirementList(laterRequirements, "requirements", true)}
+        </div>
+      )}
+
+      {brief.indicatorsToAgree && brief.indicatorsToAgree.length > 0 && (
+        <div className="brief-section">
+          <h3 className="brief-section-title">Indicadores por acordar</h3>
+          {renderRequirementList(brief.indicatorsToAgree, "indicatorsToAgree", false)}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="ws-shell" id="espacio-proyecto">
       <div className="visually-hidden" aria-live="polite" aria-atomic="true">
         {liveAnnouncement}
       </div>
 
-      {/* Header + Animated Progress Bar */}
+      {/* Minimal Header + Progress Bar */}
       <header className="ws-topbar no-print">
         <div className="ws-topbar-inner">
           <div className="ws-brand-group">
@@ -536,35 +739,20 @@ export default function ProjectWorkspace() {
               <img src="/brand/enix-logo.png" alt="ENIX" width="1578" height="447" className="ws-logo-img" />
             </a>
             <span className="ws-divider" aria-hidden="true" />
-            <span className="ws-title-pill">Tu proyecto</span>
-            <span className={`ws-mode-badge ${assistantMode === "ai" ? "is-ai" : ""}`}>
-              <Sparkles size={12} aria-hidden="true" />
-              {assistantMode === "ai" ? "Asesor IA activo" : "Guía interactiva"}
-            </span>
+            <span className="ws-title-pill">Definir mi proyecto</span>
           </div>
 
-          <ol className="ws-stepper" aria-label="Etapas del proyecto">
-            {STAGES.map((st, idx) => {
-              const currentStageIdx = STAGES.indexOf(stage);
-              const isActive = st === stage;
-              const isDone = idx < currentStageIdx;
-              return (
-                <li
-                  key={st}
-                  className={`ws-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
-                  aria-current={isActive ? "step" : undefined}
-                >
-                  <span>{isDone ? "✓" : `${idx + 1}.`}</span>
-                  <span>{STAGE_LABELS[st]}</span>
-                </li>
-              );
-            })}
-          </ol>
-
           <div className="ws-top-actions">
-            <a href="/contact/" className="btn btn-secondary btn-sm">
-              Hablar con el equipo
-            </a>
+            {!isSummaryStep && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => previewDialogRef.current?.showModal()}
+              >
+                <Eye size={14} aria-hidden="true" />
+                <span>Ver avance ({brief.requirements.length})</span>
+              </button>
+            )}
             <a href="/" className="btn btn-secondary btn-sm">
               <ArrowLeft size={14} aria-hidden="true" />
               <span>Portada</span>
@@ -572,59 +760,36 @@ export default function ProjectWorkspace() {
           </div>
         </div>
 
-        <div className="ws-progress-track" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label="Avance de la definición del proyecto">
+        <div
+          className="ws-progress-track"
+          role="progressbar"
+          aria-valuenow={progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Avance de la definición"
+        >
           <div className="ws-progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
       </header>
 
-      {/* Mobile View Switcher */}
-      <div className="workspace-mobile-tabs no-print" role="tablist" aria-label="Vistas del espacio de proyecto">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mobileTab === "step"}
-          className="ws-tab-btn"
-          onClick={() => setMobileTab("step")}
-        >
-          Paso {Math.min(stepIndex + 1, activeSteps.length)} de {activeSteps.length}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mobileTab === "brief"}
-          className="ws-tab-btn"
-          onClick={() => {
-            setMobileTab("brief");
-            setBriefUpdatedUnseen(false);
-          }}
-        >
-          <span>Tu ficha ({brief.requirements.length})</span>
-          {briefUpdatedUnseen && <span className="ws-tab-dot" aria-label="Actualizado" />}
-        </button>
-      </div>
+      {/* Single Centered Column */}
+      <main className={`ws-main ${isSummaryStep ? "is-summary" : ""}`}>
+        {!isSummaryStep ? (
+          <div key={`${currentStep.id}-${stepIndex}`} className="step-stage-anim" style={{ display: "flex", flexDirection: "column", gap: "1.15rem" }}>
+            {/* Compact Context Chips */}
+            <div className="step-context-chips">
+              <span className="context-chip is-step">
+                Paso {Math.min(stepIndex + 1, activeSteps.length - 1)} de {activeSteps.length - 1} · {STAGE_LABELS[stage]}
+              </span>
+              {compactSummaryChips.map((chip) => (
+                <span key={chip} className="context-chip">
+                  ✓ {chip}
+                </span>
+              ))}
+            </div>
 
-      {/* Main Split Workspace */}
-      <main className="workspace-grid">
-        {/* Left: Focused Interactive Step Screen */}
-        <section
-          key={`${currentStep.id}-${stepIndex}`}
-          className={`workspace-step-col step-stage-anim no-print ${mobileTab !== "step" ? "is-hidden-mobile" : ""}`}
-          aria-label="Asistente de proyectos paso a paso"
-        >
-          <div className="step-header-meta">
-            <span className="step-counter-pill">
-              Paso {Math.min(stepIndex + 1, activeSteps.length)} de {activeSteps.length} · {STAGE_LABELS[stage]}
-            </span>
-
-            {!isSummaryStep && (
-              <button type="button" className="ws-link-btn" onClick={handleJumpToSummary}>
-                Ir directo a enviar mi ficha →
-              </button>
-            )}
-          </div>
-
-          {!isSummaryStep ? (
-            <>
+            {/* Clean Focused Card */}
+            <section className="step-card" aria-label="Paso actual del proyecto">
               {activeInterpretation && (
                 <div className="step-advisor-note">
                   <span className="step-advisor-icon" aria-hidden="true">
@@ -637,7 +802,7 @@ export default function ProjectWorkspace() {
               <h1 className="step-question-title">{activeQuestion}</h1>
 
               {activeOptions.length > 0 && (
-                <div className="step-cards-grid" role="group" aria-label="Opciones rápidas">
+                <div className="step-cards-grid" role="group" aria-label="Opciones">
                   {activeOptions.map((opt) => (
                     <button
                       key={opt.id}
@@ -669,7 +834,7 @@ export default function ProjectWorkspace() {
                 )}
 
                 <label htmlFor={stepInputId} className="step-custom-label">
-                  ¿Prefieres explicarlo con tus propias palabras?
+                  O escríbelo con tus propias palabras:
                 </label>
                 <div className="ws-composer-row">
                   <textarea
@@ -677,7 +842,7 @@ export default function ProjectWorkspace() {
                     rows={2}
                     maxLength={1000}
                     className="ws-input"
-                    placeholder="Escribe aquí los detalles de tu proyecto o negocio…"
+                    placeholder="Cuéntanos un poco más si ninguna opción encaja exacto…"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => {
@@ -697,42 +862,58 @@ export default function ProjectWorkspace() {
                   </button>
                 </div>
               </form>
+            </section>
 
-              <div className="step-footer-nav">
-                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                  {stepIndex > 0 && (
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleStepBack}>
-                      <RotateCcw size={13} aria-hidden="true" />
-                      <span>Paso anterior</span>
-                    </button>
-                  )}
-                  <button type="button" className="ws-link-btn" onClick={handleResetDraft}>
-                    <Trash2 size={13} aria-hidden="true" />
-                    <span>Empezar de nuevo</span>
+            {/* Clean Footer Controls */}
+            <div className="step-footer-nav">
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                {stepIndex > 0 && (
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleStepBack}>
+                    <RotateCcw size={13} aria-hidden="true" />
+                    <span>Paso anterior</span>
                   </button>
-                </div>
-                <span style={{ fontSize: "0.74rem", color: "var(--ink-muted)" }}>
-                  {storageWarning ? "Sesión activa en esta pestaña" : "Guardado automático en tu navegador"}
-                </span>
+                )}
+                <button type="button" className="ws-link-btn" onClick={handleResetDraft}>
+                  <Trash2 size={13} aria-hidden="true" />
+                  <span>Reiniciar</span>
+                </button>
               </div>
-            </>
-          ) : (
-            /* FINAL STEP SCREEN: Summary + Direct Send to ENIX Studio */
-            <>
-              <div className="summary-hero-box">
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--status-confirmed-ink)", fontWeight: 700, fontSize: "var(--text-xs)" }}>
-                  <CheckCircle2 size={16} aria-hidden="true" />
-                  <span>Ficha lista para revisión comercial</span>
-                </div>
-                <h1 className="step-question-title" style={{ fontSize: "clamp(1.4rem, 2.2vw, 1.85rem)" }}>
-                  Envía tu proyecto al equipo de ENIX Studio
-                </h1>
-                <p style={{ fontSize: "var(--text-sm)", color: "var(--ink-secondary)", lineHeight: 1.55 }}>
-                  Revisa o edita cualquier punto de tu ficha al costado. Al enviarla, nuestro equipo revisará tu alcance para proponerte el siguiente paso concreto.
+
+              <button type="button" className="ws-link-btn" onClick={handleJumpToSummary}>
+                <span>Saltar al resumen y enviar →</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* FINAL SCREEN: Editable Brief + Direct Submission */
+          <div className="step-stage-anim" style={{ display: "flex", flexDirection: "column", gap: "1.35rem" }}>
+            <div className="summary-banner no-print">
+              <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", color: "var(--status-confirmed-ink)", fontWeight: 700, fontSize: "var(--text-xs)" }}>
+                <CheckCircle2 size={16} aria-hidden="true" />
+                <span>¡Listo! Tu ficha de proyecto está armada</span>
+              </div>
+              <h1 className="step-question-title" style={{ fontSize: "clamp(1.5rem, 2.6vw, 2rem)" }}>
+                Revisa tu resumen y envíalo a ENIX Studio
+              </h1>
+              <p style={{ fontSize: "var(--text-sm)", color: "var(--ink-secondary)", lineHeight: 1.55 }}>
+                Puedes editar cualquier campo, confirmar o quitar las sugerencias en naranja, descargar el archivo o enviarlo ahora mismo para que nuestro equipo evalúe tu proyecto.
+              </p>
+            </div>
+
+            {/* Direct Submit Card First or Right Below Brief */}
+            <section className="summary-brief-card" aria-label="Ficha editable de proyecto">
+              {renderEditableBriefContent()}
+            </section>
+
+            <section className="summary-submit-card no-print" aria-label="Enviar proyecto a ENIX Studio">
+              <div>
+                <h2 className="heading-md">Solicitar evaluación al equipo</h2>
+                <p style={{ fontSize: "var(--text-xs)", color: "var(--ink-secondary)", marginTop: 4 }}>
+                  {siteConfig.responsibilityStatement}
                 </p>
               </div>
 
-              <form className="summary-submit-card" onSubmit={handleSendSubmit}>
+              <form onSubmit={handleSendSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <div className="send-form-grid">
                   <div className="send-field">
                     <label htmlFor="send-name">Tu nombre *</label>
@@ -780,21 +961,16 @@ export default function ProjectWorkspace() {
 
                 {sendState.kind === "success" && (
                   <div className="send-status-box is-ok" role="status">
-                    <strong>¡Solicitud recibida ({sendState.referenceId})!</strong> {sendState.message}
+                    <strong>¡Proyecto recibido ({sendState.referenceId})!</strong> {sendState.message}
                   </div>
                 )}
 
                 {sendState.kind === "unconfigured" && (
                   <div className="send-status-box is-info" role="status">
                     <p style={{ marginBottom: 8 }}>{sendState.message}</p>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                      <button type="button" className="btn btn-primary btn-sm" onClick={handleDownloadMd}>
-                        Descargar resumen (.md)
-                      </button>
-                      <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="btn btn-secondary btn-sm">
-                        Abrir correo con mi resumen
-                      </a>
-                    </div>
+                    <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="btn btn-secondary btn-sm">
+                      Abrir correo con mi resumen
+                    </a>
                   </div>
                 )}
 
@@ -805,10 +981,16 @@ export default function ProjectWorkspace() {
                 )}
 
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleStepBack}>
-                    <RotateCcw size={13} aria-hidden="true" />
-                    <span>Volver al paso anterior</span>
-                  </button>
+                  <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap" }}>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleStepBack}>
+                      <RotateCcw size={13} aria-hidden="true" />
+                      <span>Ajustar respuestas</span>
+                    </button>
+                    <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="ws-link-btn">
+                      <Mail size={13} aria-hidden="true" />
+                      <span>Abrir en correo</span>
+                    </a>
+                  </div>
 
                   <button
                     type="submit"
@@ -820,7 +1002,7 @@ export default function ProjectWorkspace() {
                       {sendState.kind === "submitting"
                         ? "Enviando proyecto…"
                         : sendState.kind === "success"
-                          ? "Proyecto enviado"
+                          ? "Proyecto enviado ✓"
                           : submissionConnected
                             ? "Enviar mi proyecto a ENIX Studio"
                             : "Solicitar evaluación"}
@@ -828,271 +1010,61 @@ export default function ProjectWorkspace() {
                   </button>
                 </div>
               </form>
+            </section>
 
-              <div className="step-footer-nav">
-                <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="ws-link-btn">
-                  <Mail size={13} aria-hidden="true" />
-                  <span>Abrir resumen en mi correo</span>
-                </a>
-                <button type="button" className="ws-link-btn" onClick={handleResetDraft}>
-                  <Trash2 size={13} aria-hidden="true" />
-                  <span>Iniciar otro proyecto</span>
-                </button>
-              </div>
-            </>
-          )}
-        </section>
-
-        {/* Right: Live Editable Brief Sidebar */}
-        <aside
-          className={`workspace-brief-col ${briefPulse ? "is-pulsing" : ""} ${mobileTab !== "brief" ? "is-hidden-mobile" : ""}`}
-          aria-label="Ficha editable de proyecto"
-        >
-          <div className="brief-head">
-            <div className="brief-head-meta">
-              <span className="eyebrow" style={{ paddingBlock: "0.22rem", fontSize: "0.72rem" }}>
-                <span className="eyebrow-dot" aria-hidden="true" />
-                Tu ficha en vivo
+            <div className="step-footer-nav no-print">
+              <span style={{ fontSize: "0.74rem", color: "var(--ink-muted)" }}>
+                Este documento resume tu alcance inicial; no constituye una propuesta cerrada ni contrato.
               </span>
-              <span className="brief-rev">Rev. #{brief.revision}</span>
-            </div>
-
-            <label htmlFor={titleInputId} className="visually-hidden">
-              Título provisional del proyecto
-            </label>
-            <input
-              id={titleInputId}
-              type="text"
-              className="brief-editable-title"
-              value={brief.title}
-              placeholder="Título de tu proyecto"
-              onChange={(e) => {
-                manualFields.add("title");
-                setBrief((prev) => ({
-                  ...prev,
-                  title: e.target.value,
-                  revision: prev.revision + 1,
-                  updatedAt: new Date().toISOString()
-                }));
-              }}
-            />
-
-            <label htmlFor={goalInputId} className="brief-section-title">
-              Objetivo principal (editable)
-            </label>
-            <textarea
-              id={goalInputId}
-              rows={2}
-              className="brief-editable-goal"
-              value={brief.goal}
-              placeholder="Resume qué quieres lograr…"
-              onChange={(e) => {
-                manualFields.add("goal");
-                setBrief((prev) => ({
-                  ...prev,
-                  goal: e.target.value,
-                  revision: prev.revision + 1,
-                  updatedAt: new Date().toISOString()
-                }));
-              }}
-            />
-
-            <div className="brief-legend">
-              <span className="status-badge confirmed">Confirmado</span>
-              <span className="status-badge suggested">Sugerido</span>
-              <span className="status-badge pending">Por definir</span>
+              <button type="button" className="ws-link-btn" onClick={handleResetDraft}>
+                <Trash2 size={13} aria-hidden="true" />
+                <span>Empezar otro proyecto</span>
+              </button>
             </div>
           </div>
+        )}
+      </main>
 
-          <dl className="brief-kv-grid">
-            <div className="brief-kv">
-              <dt>Enfoque</dt>
-              <dd>{TRACK_LABELS[brief.track || "development"]}</dd>
-            </div>
-            <div className="brief-kv">
-              <dt>{isMarketingOrCombined ? "Línea principal" : "Tipo de solución"}</dt>
-              <dd>{brief.category ? CATEGORY_LABELS[brief.category] || brief.category : "Por definir"}</dd>
-            </div>
-            <div className="brief-kv">
-              <dt>Fechas / plazo</dt>
-              <dd>{brief.declaredTimeline || "Por definir"}</dd>
-            </div>
-            {isMarketingOrCombined && (
-              <div className="brief-kv">
-                <dt>Modalidad</dt>
-                <dd>
-                  <select
-                    aria-label="Modalidad de trabajo"
-                    value={brief.engagementModality || "undecided"}
-                    onChange={(e) => {
-                      manualFields.add("engagementModality");
-                      setBrief((prev) => ({
-                        ...prev,
-                        engagementModality: e.target.value as EngagementModality,
-                        revision: prev.revision + 1,
-                        updatedAt: new Date().toISOString()
-                      }));
-                    }}
-                    style={{
-                      width: "100%",
-                      border: "1px solid var(--border-subtle)",
-                      borderRadius: 8,
-                      padding: "0.2rem 0.4rem",
-                      background: "var(--bg-surface)",
-                      fontSize: "0.75rem",
-                      fontWeight: 700
-                    }}
-                  >
-                    <option value="undecided">{MODALITY_LABELS.undecided}</option>
-                    <option value="one-time">{MODALITY_LABELS["one-time"]}</option>
-                    <option value="ongoing">{MODALITY_LABELS.ongoing}</option>
-                  </select>
-                </dd>
-              </div>
-            )}
-          </dl>
-
-          {isMarketingOrCombined && (
-            <div className="brief-section">
-              <h2 className="brief-section-title">Contexto comercial y presupuestos</h2>
-              <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label htmlFor="brief-audience-territory" style={{ fontSize: "0.7rem", color: "var(--ink-muted)" }}>
-                  Público y territorio
-                </label>
-                <input
-                  id="brief-audience-territory"
-                  type="text"
-                  className="brief-add-input"
-                  value={brief.targetAudienceAndTerritory || ""}
-                  placeholder="Ej: Clientes locales en Santiago"
-                  onChange={(e) => {
-                    manualFields.add("targetAudienceAndTerritory");
-                    setBrief((prev) => ({
-                      ...prev,
-                      targetAudienceAndTerritory: e.target.value,
-                      revision: prev.revision + 1,
-                      updatedAt: new Date().toISOString()
-                    }));
-                  }}
-                />
-              </div>
-
-              <div className="brief-kv-grid">
-                <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <label htmlFor="brief-ad-spend" style={{ fontSize: "0.7rem", color: "var(--ink-muted)" }}>
-                    Inversión en anuncios
-                  </label>
-                  <input
-                    id="brief-ad-spend"
-                    type="text"
-                    className="brief-add-input"
-                    value={brief.adSpendBudget || ""}
-                    placeholder="Por definir"
-                    onChange={(e) => {
-                      manualFields.add("adSpendBudget");
-                      setBrief((prev) => ({
-                        ...prev,
-                        adSpendBudget: e.target.value || null,
-                        revision: prev.revision + 1,
-                        updatedAt: new Date().toISOString()
-                      }));
-                    }}
-                  />
-                </div>
-                <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <label htmlFor="brief-service-budget" style={{ fontSize: "0.7rem", color: "var(--ink-muted)" }}>
-                    Presupuesto servicios
-                  </label>
-                  <input
-                    id="brief-service-budget"
-                    type="text"
-                    className="brief-add-input"
-                    value={brief.serviceBudget || ""}
-                    placeholder="Por definir"
-                    onChange={(e) => {
-                      manualFields.add("serviceBudget");
-                      setBrief((prev) => ({
-                        ...prev,
-                        serviceBudget: e.target.value || null,
-                        revision: prev.revision + 1,
-                        updatedAt: new Date().toISOString()
-                      }));
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {brief.users.length > 0 && (
-            <div className="brief-section">
-              <h2 className="brief-section-title">Personas usuarias</h2>
-              {renderRequirementList(brief.users, "users", false)}
-            </div>
-          )}
-
-          <div className="brief-section">
-            <h2 className="brief-section-title">Lo esencial para empezar</h2>
-            {essentialRequirements.length > 0 ? (
-              renderRequirementList(essentialRequirements, "requirements", true)
-            ) : (
-              <p style={{ fontSize: "var(--text-xs)", color: "var(--ink-muted)" }}>
-                Tus respuestas y sugerencias irán apareciendo aquí paso a paso.
-              </p>
-            )}
-
-            <form className="brief-add-row no-print" onSubmit={handleAddManualReq}>
-              <label htmlFor="add-req-input" className="visually-hidden">
-                Agregar requisito manual
-              </label>
-              <input
-                id="add-req-input"
-                type="text"
-                className="brief-add-input"
-                placeholder="Agregar requisito confirmado…"
-                value={newReqText}
-                onChange={(e) => setNewReqText(e.target.value)}
-              />
-              <button type="submit" className="btn btn-secondary btn-sm">
-                <Plus size={14} aria-hidden="true" />
-                <span>Sumar</span>
+      {/* Optional On-Demand Preview Modal ("Ver avance") */}
+      <dialog
+        ref={previewDialogRef}
+        className="preview-dialog"
+        aria-labelledby="preview-dialog-title"
+        {...({ closedby: "any" } as Record<string, string>)}
+      >
+        <div className="preview-dialog-body">
+          <div className="preview-dialog-head">
+            <h2 id="preview-dialog-title" className="heading-md">
+              Avance de tu ficha
+            </h2>
+            <form method="dialog">
+              <button type="submit" className="mobile-close-btn" aria-label="Cerrar vista previa">
+                <X size={18} aria-hidden="true" />
               </button>
             </form>
           </div>
 
-          {laterRequirements.length > 0 && (
-            <div className="brief-section">
-              <h2 className="brief-section-title">Para después</h2>
-              {renderRequirementList(laterRequirements, "requirements", true)}
-            </div>
-          )}
+          {renderEditableBriefContent()}
 
-          {brief.indicatorsToAgree && brief.indicatorsToAgree.length > 0 && (
-            <div className="brief-section">
-              <h2 className="brief-section-title">Indicadores por acordar</h2>
-              {renderRequirementList(brief.indicatorsToAgree, "indicatorsToAgree", false)}
-            </div>
-          )}
-
-          <div className="brief-actions-bar no-print">
-            <div className="brief-export-row">
-              <button type="button" className="btn btn-secondary btn-sm" onClick={handleDownloadMd}>
-                <Download size={14} aria-hidden="true" />
-                <span>.md</span>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.6rem", paddingTop: "0.5rem" }}>
+            <form method="dialog">
+              <button type="submit" className="btn btn-secondary btn-sm">
+                Seguir respondiendo
               </button>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={handleDownloadTxt}>
-                <FileText size={14} aria-hidden="true" />
-                <span>.txt</span>
-              </button>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
-                <Printer size={14} aria-hidden="true" />
-                <span>PDF</span>
-              </button>
-            </div>
-            <p className="brief-disclaimer">{siteConfig.responsibilityStatement}</p>
+            </form>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                previewDialogRef.current?.close();
+                handleJumpToSummary();
+              }}
+            >
+              Ir a enviar ficha →
+            </button>
           </div>
-        </aside>
-      </main>
+        </div>
+      </dialog>
     </div>
   );
 }
