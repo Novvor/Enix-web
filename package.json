@@ -12,19 +12,19 @@
     "test:seo": "node scripts/seo-audit.mjs"
   },
   "dependencies": {
-    "@astrojs/react": "^4.2.1",
-    "@astrojs/sitemap": "^3.6.0",
-    "@astrojs/vercel": "^8.1.4",
+    "@astrojs/react": "^7.1.9",
+    "@astrojs/sitemap": "^3.7.6",
+    "@astrojs/vercel": "^11.0.22",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.5",
     "@rive-app/webgl2": "^2.54.0",
     "@upstash/redis": "^1.41.0",
-    "astro": "^5.13.0",
+    "astro": "^7.4.13",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
+    "@astrojs/check": "^0.9.12",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "typescript": "^5.8.3"
