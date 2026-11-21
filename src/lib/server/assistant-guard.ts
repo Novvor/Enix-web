@@ -1090,12 +1090,21 @@ export async function handleAssistantTurn(
         !resolvedOfferContact &&
         Boolean(validated.question && validated.question.includes("?"));
 
+      const detectedEmail = baselineTurn.detectedEmail || null;
+      let finalQuestion = validated.question;
+      let finalReply = validated.reply;
+      if (detectedEmail && resolvedOfferContact) {
+        const confirmLine = `Ya anoté ${detectedEmail} junto con este resumen; confirma el envío abajo para que te escriba el equipo de ENIX.`;
+        finalQuestion = confirmLine;
+        finalReply = `${validated.interpretation}\n\n${confirmLine}`;
+      }
+
       const aiResponse: AssistantTurnResponse = {
         ...baselineTurn,
         mode: "ai",
         interpretation: validated.interpretation,
-        question: validated.question,
-        reply: validated.reply,
+        question: finalQuestion,
+        reply: finalReply,
         links: validated.links,
         options: resolvedOfferContact
           ? []
@@ -1106,7 +1115,7 @@ export async function handleAssistantTurn(
         commercialStage: resolvedCommercialStage,
         stage: mapCommercialStageToProjectStage(resolvedCommercialStage),
         offerContact: resolvedOfferContact,
-        detectedEmail: baselineTurn.detectedEmail || null,
+        detectedEmail,
         contactDeclined: Boolean(baselineTurn.contactDeclined),
         askedDiscoveryQuestion: aiAskedDiscovery,
         patch: mergedPatch
