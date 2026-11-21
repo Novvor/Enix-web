@@ -434,8 +434,8 @@ export class UpstashRedisCoordinatorStore implements CoordinatorStore {
       const current = await this.getSessionHistory(sessionId);
       const next: SessionHistoryEntry[] = [
         ...current,
-        { role: "user", text: userText.slice(0, 600) },
-        { role: "assistant", text: assistantText.slice(0, 800) }
+        { role: "user" as const, text: userText.slice(0, 600) },
+        { role: "assistant" as const, text: assistantText.slice(0, 800) }
       ].slice(-16);
       await this.execCommand(["SET", this.k(`hist:${sessionId}`), JSON.stringify(next), "EX", 86400]);
     } catch {

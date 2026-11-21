@@ -481,8 +481,8 @@ export class InMemoryCoordinatorStore implements CoordinatorStore {
     const cur = this.sessionHistory.get(sessionId) || [];
     const next: SessionHistoryEntry[] = [
       ...cur,
-      { role: "user", text: userText.slice(0, 600) },
-      { role: "assistant", text: assistantText.slice(0, 800) }
+      { role: "user" as const, text: userText.slice(0, 600) },
+      { role: "assistant" as const, text: assistantText.slice(0, 800) }
     ].slice(-16);
     this.sessionHistory.set(sessionId, next);
   }
