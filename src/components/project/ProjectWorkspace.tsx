@@ -1,7 +1,9 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
+  CheckCircle2,
   Download,
   FileText,
   Mail,
@@ -10,8 +12,7 @@ import {
   RotateCcw,
   Send,
   Sparkles,
-  Trash2,
-  X
+  Trash2
 } from "lucide-react";
 import {
   CATEGORY_LABELS,
@@ -49,6 +50,7 @@ import {
   downloadTextFile
 } from "@/lib/project/export";
 import {
+  getQuestionForStep,
   getStepsForTrack,
   processGuidedAnswer,
   startGuidedSession
@@ -76,18 +78,17 @@ export default function ProjectWorkspace() {
   const [submissionConnected, setSubmissionConnected] = useState<boolean>(false);
   const [storageWarning, setStorageWarning] = useState<boolean>(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>("");
-  const [mobileTab, setMobileTab] = useState<"chat" | "brief">("chat");
+  const [mobileTab, setMobileTab] = useState<"step" | "brief">("step");
   const [briefUpdatedUnseen, setBriefUpdatedUnseen] = useState<boolean>(false);
+  const [briefPulse, setBriefPulse] = useState<boolean>(false);
   const [newReqText, setNewReqText] = useState("");
   const [manualFields] = useState<Set<string>>(() => new Set());
   const [hydrated, setHydrated] = useState(false);
 
-  // Send modal state
-  const sendDialogRef = useRef<HTMLDialogElement | null>(null);
+  // Direct submit form state (shown directly on Summary step for zero friction)
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactCompany, setContactCompany] = useState("");
-  const [contactRole, setContactRole] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [sendState, setSendState] = useState<
     | { kind: "idle" }
@@ -98,12 +99,10 @@ export default function ProjectWorkspace() {
   >({ kind: "idle" });
   const idempotencyRef = useRef<string>(uid("idem"));
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const chatInputId = useId();
+  const stepInputId = useId();
   const titleInputId = useId();
   const goalInputId = useId();
 
-  // Initialize from starter idea, URL category, or saved draft
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlCategory = params.get("category") || params.get("categoria");
@@ -115,7 +114,8 @@ export default function ProjectWorkspace() {
       const init = startGuidedSession(starter.idea, starter.category || urlCategory);
       const baseBrief = createEmptyBrief(starter.idea, starter.category || urlCategory, init.track);
       const nextBrief = applyBriefPatch(baseBrief, init.briefPatch);
-      const initialMsgs: ChatMessage[] = [
+      setBrief(nextBrief);
+      setMessages([
         {
           id: uid("usr"),
           role: "user",
@@ -133,12 +133,10 @@ export default function ProjectWorkspace() {
           options: init.options,
           createdAt: new Date().toISOString()
         }
-      ];
-      setBrief(nextBrief);
-      setMessages(initialMsgs);
+      ]);
       setStage(init.stage);
       setStepIndex(init.stepIndex);
-      setLiveAnnouncement("Tu idea inicial ya está cargada en la ficha de proyecto.");
+      setLiveAnnouncement("Tu idea inicial ya está cargada en tu ficha de proyecto.");
       trackProjectEvent("enix_project_start", {
         track: init.track,
         category: nextBrief.category || "undetermined"
@@ -170,15 +168,14 @@ export default function ProjectWorkspace() {
       setAnswers(draft.answers || {});
     } else {
       const init = startGuidedSession("", null);
-      const baseBrief = createEmptyBrief("", null);
-      setBrief(baseBrief);
+      setBrief(createEmptyBrief("", null, "development"));
       setMessages([
         {
           id: uid("ast"),
           role: "assistant",
           stage: init.stage,
           stepId: init.stepId,
-          interpretation: "Cuéntame qué tienes en mente o elige una categoría para empezar.",
+          interpretation: "Elige una opción o cuéntanos tu idea con tus palabras para armar tu ficha paso a paso.",
           text: init.question,
           options: init.options,
           createdAt: new Date().toISOString()
@@ -190,7 +187,6 @@ export default function ProjectWorkspace() {
 
     setHydrated(true);
 
-    // Check server capabilities (AI provider & email submission)
     fetch("/api/project-assistant/")
       .then((r) => (r.ok ? r.json() : null))
       .then((info) => {
@@ -198,12 +194,9 @@ export default function ProjectWorkspace() {
         if (info.assistantMode === "ai") setAssistantMode("ai");
         if (info.submissionConnected) setSubmissionConnected(true);
       })
-      .catch(() => {
-        // Stay honestly in local guided mode
-      });
+      .catch(() => {});
   }, []);
 
-  // Persist draft automatically
   useEffect(() => {
     if (!hydrated) return;
     saveProjectDraft({
@@ -216,13 +209,21 @@ export default function ProjectWorkspace() {
     });
   }, [hydrated, brief, messages, stage, stepIndex, answers]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages.length]);
-
   const activeSteps = getStepsForTrack(brief.track || "development");
   const currentStep = activeSteps[stepIndex] || activeSteps[activeSteps.length - 1];
+  const isSummaryStep = currentStep.id === "summary" || stage === "summary";
   const isMarketingOrCombined = brief.track === "marketing" || brief.track === "combined";
+
+  const latestAssistantMsg = [...messages].reverse().find((m) => m.role === "assistant");
+  const fallbackQuestion = getQuestionForStep(currentStep.id, brief);
+  const activeQuestion = latestAssistantMsg?.text || fallbackQuestion.question;
+  const activeInterpretation = latestAssistantMsg?.interpretation || "";
+  const activeOptions = latestAssistantMsg?.options || fallbackQuestion.options;
+
+  const progressPct = Math.min(
+    100,
+    Math.round(((stepIndex + (isSummaryStep ? 1 : 0.4)) / activeSteps.length) * 100)
+  );
 
   const essentialRequirements = useMemo(
     () => brief.requirements.filter((r) => r.priority !== "later"),
@@ -232,6 +233,11 @@ export default function ProjectWorkspace() {
     () => brief.requirements.filter((r) => r.priority === "later"),
     [brief.requirements]
   );
+
+  function triggerBriefPulse() {
+    setBriefPulse(true);
+    window.setTimeout(() => setBriefPulse(false), 520);
+  }
 
   async function submitTurn(answerText: string, displayLabel?: string, isSelection = false) {
     const clean = answerText.trim();
@@ -280,7 +286,6 @@ export default function ProjectWorkspace() {
         }
       }
 
-      // Apply patch with revision control so manual edits are never clobbered
       setBrief((prev) =>
         applyBriefPatch(prev, turnResult.patch, {
           expectedRevision: expectedRev,
@@ -293,6 +298,7 @@ export default function ProjectWorkspace() {
       const nextIdx = nextSteps.findIndex((s) => s.id === turnResult.stepId);
       if (nextIdx >= 0) setStepIndex(nextIdx);
       setStage(turnResult.stage);
+
       if (turnResult.stage === "summary" && stage !== "summary") {
         trackProjectEvent("enix_project_summary", {
           track: resolvedTrack,
@@ -300,22 +306,25 @@ export default function ProjectWorkspace() {
         });
       }
 
-      const assistantMsg: ChatMessage = {
-        id: uid("ast"),
-        role: "assistant",
-        stage: turnResult.stage,
-        stepId: turnResult.stepId,
-        interpretation: turnResult.interpretation,
-        text: turnResult.question,
-        options: turnResult.options,
-        createdAt: new Date().toISOString()
-      };
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: uid("ast"),
+          role: "assistant",
+          stage: turnResult.stage,
+          stepId: turnResult.stepId,
+          interpretation: turnResult.interpretation,
+          text: turnResult.question,
+          options: turnResult.options,
+          createdAt: new Date().toISOString()
+        }
+      ]);
 
-      setMessages((prev) => [...prev, assistantMsg]);
-      if (mobileTab === "chat") setBriefUpdatedUnseen(true);
-      setLiveAnnouncement("La ficha de proyecto se actualizó con tu respuesta.");
+      triggerBriefPulse();
+      if (mobileTab === "step") setBriefUpdatedUnseen(true);
+      setLiveAnnouncement("Avanzaste al siguiente paso y tu ficha se actualizó.");
     } catch {
-      setTurnError("Hubo un problema al procesar la respuesta, pero tus datos siguen guardados. Puedes reintentar.");
+      setTurnError("Hubo un problema al procesar este paso, pero tus respuestas siguen guardadas.");
     } finally {
       setIsSendingTurn(false);
     }
@@ -325,9 +334,9 @@ export default function ProjectWorkspace() {
     if (stepIndex <= 0) return;
     const prevIdx = stepIndex - 1;
     const prevStep = activeSteps[prevIdx];
+    const prevQ = getQuestionForStep(prevStep.id, brief);
     setStepIndex(prevIdx);
     setStage(prevStep.stage);
-    const prevTurn = processGuidedAnswer(brief, activeSteps[Math.max(0, prevIdx - 1)].id, "__skip__", true);
     setMessages((prev) => [
       ...prev,
       {
@@ -335,9 +344,29 @@ export default function ProjectWorkspace() {
         role: "assistant",
         stage: prevStep.stage,
         stepId: prevStep.id,
-        interpretation: "Volvemos a esta etapa para ajustar lo que necesites.",
-        text: prevTurn.question,
-        options: prevTurn.options,
+        interpretation: "Volviste al paso anterior para ajustar tu respuesta.",
+        text: prevQ.question,
+        options: prevQ.options,
+        createdAt: new Date().toISOString()
+      }
+    ]);
+  }
+
+  function handleJumpToSummary() {
+    const lastIdx = activeSteps.length - 1;
+    const sumQ = getQuestionForStep("summary", brief);
+    setStepIndex(lastIdx);
+    setStage("summary");
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: uid("ast"),
+        role: "assistant",
+        stage: "summary",
+        stepId: "summary",
+        interpretation: "Puedes revisar tu ficha y enviarla ahora mismo al equipo de ENIX Studio.",
+        text: sumQ.question,
+        options: [],
         createdAt: new Date().toISOString()
       }
     ]);
@@ -345,25 +374,26 @@ export default function ProjectWorkspace() {
 
   function handleResetDraft() {
     clearProjectDraft();
-    const empty = createEmptyBrief();
+    const empty = createEmptyBrief("", null, "development");
     const init = startGuidedSession("", null);
     setBrief(empty);
     setStage("idea");
     setStepIndex(0);
     setAnswers({});
+    setSendState({ kind: "idle" });
     setMessages([
       {
         id: uid("ast"),
         role: "assistant",
         stage: init.stage,
         stepId: init.stepId,
-        interpretation: "Empezamos una ficha nueva desde cero.",
+        interpretation: "Empezamos un proyecto nuevo desde cero.",
         text: init.question,
         options: init.options,
         createdAt: new Date().toISOString()
       }
     ]);
-    setLiveAnnouncement("Borrador reiniciado.");
+    setLiveAnnouncement("Proyecto reiniciado.");
   }
 
   function handleAddManualReq(e: React.FormEvent) {
@@ -371,27 +401,17 @@ export default function ProjectWorkspace() {
     if (!newReqText.trim()) return;
     setBrief((prev) => addManualRequirement(prev, "requirements", newReqText, "initial"));
     setNewReqText("");
-    setLiveAnnouncement("Requisito agregado a Lo esencial.");
+    triggerBriefPulse();
   }
 
   function handleDownloadMd() {
-    const md = briefToMarkdown(brief);
-    downloadTextFile(buildSlugFilename(brief.title, "md"), md, "text/markdown;charset=utf-8");
+    downloadTextFile(buildSlugFilename(brief.title, "md"), briefToMarkdown(brief), "text/markdown;charset=utf-8");
     trackProjectEvent("enix_project_download", { track: brief.track, format: "md" });
-    setLiveAnnouncement("Resumen descargado en formato Markdown.");
   }
 
   function handleDownloadTxt() {
-    const txt = briefToPlainText(brief);
-    downloadTextFile(buildSlugFilename(brief.title, "txt"), txt, "text/plain;charset=utf-8");
+    downloadTextFile(buildSlugFilename(brief.title, "txt"), briefToPlainText(brief), "text/plain;charset=utf-8");
     trackProjectEvent("enix_project_download", { track: brief.track, format: "txt" });
-    setLiveAnnouncement("Resumen descargado en texto plano.");
-  }
-
-  function openSendDialog() {
-    setSendState({ kind: "idle" });
-    idempotencyRef.current = uid("idem");
-    sendDialogRef.current?.showModal();
   }
 
   async function handleSendSubmit(e: React.FormEvent) {
@@ -409,7 +429,6 @@ export default function ProjectWorkspace() {
           name: contactName,
           email: contactEmail,
           company: contactCompany,
-          role: contactRole,
           phone: contactPhone,
           idempotencyKey: idempotencyRef.current,
           brief
@@ -430,7 +449,7 @@ export default function ProjectWorkspace() {
         setSendState({
           kind: "unconfigured",
           message:
-            "Este entorno aún no tiene configurada la credencial de envío directo (RESEND_API_KEY). Puedes descargar tu resumen o abrirlo en tu cliente de correo."
+            "Este entorno aún no tiene configurada RESEND_API_KEY. Puedes descargar tu resumen o abrirlo en tu correo."
         });
       } else {
         setSendState({
@@ -441,7 +460,7 @@ export default function ProjectWorkspace() {
     } catch {
       setSendState({
         kind: "error",
-        message: "Error de conexión al intentar enviar. Tu borrador sigue intacto y puedes descargarlo."
+        message: "Error de conexión al intentar enviar. Tu borrador sigue guardado."
       });
     }
   }
@@ -459,9 +478,7 @@ export default function ProjectWorkspace() {
         >
           <div className="brief-req-top">
             <span className="brief-req-text">{item.text}</span>
-            <span className={`status-badge ${item.status}`}>
-              {STATUS_LABELS[item.status]}
-            </span>
+            <span className={`status-badge ${item.status}`}>{STATUS_LABELS[item.status]}</span>
           </div>
           <div className="brief-req-actions no-print">
             {item.status !== "confirmed" && (
@@ -469,7 +486,6 @@ export default function ProjectWorkspace() {
                 type="button"
                 className="brief-mini-btn is-confirm"
                 onClick={() => setBrief((prev) => confirmRequirement(prev, bucket, item.id))}
-                aria-label={`Confirmar: ${item.text}`}
               >
                 <Check size={12} style={{ display: "inline", marginRight: 3 }} aria-hidden="true" />
                 Confirmar
@@ -497,7 +513,6 @@ export default function ProjectWorkspace() {
               type="button"
               className="brief-mini-btn"
               onClick={() => setBrief((prev) => removeRequirement(prev, bucket, item.id))}
-              aria-label={`Quitar: ${item.text}`}
             >
               Quitar
             </button>
@@ -513,28 +528,22 @@ export default function ProjectWorkspace() {
         {liveAnnouncement}
       </div>
 
-      {/* Compact Workspace Header */}
+      {/* Header + Animated Progress Bar */}
       <header className="ws-topbar no-print">
         <div className="ws-topbar-inner">
           <div className="ws-brand-group">
             <a href="/" aria-label="Volver a portada de ENIX Studio">
-              <img
-                src="/brand/enix-logo.png"
-                alt="ENIX"
-                width="1578"
-                height="447"
-                className="ws-logo-img"
-              />
+              <img src="/brand/enix-logo.png" alt="ENIX" width="1578" height="447" className="ws-logo-img" />
             </a>
             <span className="ws-divider" aria-hidden="true" />
             <span className="ws-title-pill">Tu proyecto</span>
             <span className={`ws-mode-badge ${assistantMode === "ai" ? "is-ai" : ""}`}>
               <Sparkles size={12} aria-hidden="true" />
-              {assistantMode === "ai" ? "Asistencia con IA" : "Modo guiado local"}
+              {assistantMode === "ai" ? "Asesor IA activo" : "Guía interactiva"}
             </span>
           </div>
 
-          <ol className="ws-stepper" aria-label="Etapas de definición">
+          <ol className="ws-stepper" aria-label="Etapas del proyecto">
             {STAGES.map((st, idx) => {
               const currentStageIdx = STAGES.indexOf(stage);
               const isActive = st === stage;
@@ -545,7 +554,7 @@ export default function ProjectWorkspace() {
                   className={`ws-step ${isActive ? "is-active" : ""} ${isDone ? "is-done" : ""}`}
                   aria-current={isActive ? "step" : undefined}
                 >
-                  <span>{idx + 1}.</span>
+                  <span>{isDone ? "✓" : `${idx + 1}.`}</span>
                   <span>{STAGE_LABELS[st]}</span>
                 </li>
               );
@@ -562,18 +571,22 @@ export default function ProjectWorkspace() {
             </a>
           </div>
         </div>
+
+        <div className="ws-progress-track" role="progressbar" aria-valuenow={progressPct} aria-valuemin={0} aria-valuemax={100} aria-label="Avance de la definición del proyecto">
+          <div className="ws-progress-fill" style={{ width: `${progressPct}%` }} />
+        </div>
       </header>
 
-      {/* Mobile Tab Switcher */}
+      {/* Mobile View Switcher */}
       <div className="workspace-mobile-tabs no-print" role="tablist" aria-label="Vistas del espacio de proyecto">
         <button
           type="button"
           role="tab"
-          aria-selected={mobileTab === "chat"}
+          aria-selected={mobileTab === "step"}
           className="ws-tab-btn"
-          onClick={() => setMobileTab("chat")}
+          onClick={() => setMobileTab("step")}
         >
-          Conversación
+          Paso {Math.min(stepIndex + 1, activeSteps.length)} de {activeSteps.length}
         </button>
         <button
           type="button"
@@ -585,137 +598,263 @@ export default function ProjectWorkspace() {
             setBriefUpdatedUnseen(false);
           }}
         >
-          <span>Tu proyecto</span>
+          <span>Tu ficha ({brief.requirements.length})</span>
           {briefUpdatedUnseen && <span className="ws-tab-dot" aria-label="Actualizado" />}
         </button>
       </div>
 
       {/* Main Split Workspace */}
       <main className="workspace-grid">
-        {/* Conversation Column */}
+        {/* Left: Focused Interactive Step Screen */}
         <section
-          className={`workspace-chat-col no-print ${mobileTab !== "chat" ? "is-hidden-mobile" : ""}`}
-          aria-label="Asistente de proyectos ENIX"
+          key={`${currentStep.id}-${stepIndex}`}
+          className={`workspace-step-col step-stage-anim no-print ${mobileTab !== "step" ? "is-hidden-mobile" : ""}`}
+          aria-label="Asistente de proyectos paso a paso"
         >
-          <div className="ws-chat-notice">
-            <span>
-              <strong>{assistantMode === "ai" ? "Asistencia con IA activa:" : "Modo guiado local:"}</strong>{" "}
-              {assistantMode === "ai"
-                ? "El asistente ayuda a definir tu ficha; el equipo de ENIX diseña y desarrolla la solución."
-                : "Preguntas estructuradas sin credenciales externas. Todas tus respuestas y ediciones se guardan en este navegador."}
+          <div className="step-header-meta">
+            <span className="step-counter-pill">
+              Paso {Math.min(stepIndex + 1, activeSteps.length)} de {activeSteps.length} · {STAGE_LABELS[stage]}
             </span>
-          </div>
 
-          <div className="ws-messages" role="log" aria-label="Historial de conversación">
-            {messages.map((msg, idx) => {
-              const isLatest = idx === messages.length - 1 && msg.role === "assistant";
-              return (
-                <div key={msg.id} className={`ws-msg ws-msg-${msg.role}`}>
-                  <div className="ws-msg-bubble">
-                    {msg.interpretation && <p className="ws-msg-interp">{msg.interpretation}</p>}
-                    <p className={msg.role === "assistant" ? "ws-msg-question" : ""}>{msg.text}</p>
-                  </div>
-
-                  {isLatest && msg.options && msg.options.length > 0 && (
-                    <div className="ws-options-wrap" role="group" aria-label="Opciones sugeridas">
-                      {msg.options.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          disabled={isSendingTurn}
-                          className={`ws-option-btn ${opt.kind === "neutral" ? "is-neutral" : ""}`}
-                          onClick={() => submitTurn(opt.value, opt.label, true)}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form
-            className="ws-composer"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitTurn(inputText, inputText, false);
-            }}
-          >
-            {turnError && (
-              <div className="composer-error" role="alert">
-                {turnError}
-              </div>
-            )}
-            <label htmlFor={chatInputId} className="visually-hidden">
-              Escribe tu respuesta o agrega un detalle a tu ficha
-            </label>
-            <div className="ws-composer-row">
-              <textarea
-                id={chatInputId}
-                rows={2}
-                maxLength={1200}
-                className="ws-input"
-                placeholder={
-                  stage === "summary"
-                    ? "Agrega otro detalle o requisito para sumarlo a tu ficha…"
-                    : "Escribe tu respuesta con tus propias palabras…"
-                }
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    submitTurn(inputText, inputText, false);
-                  }
-                }}
-              />
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isSendingTurn || !inputText.trim()}
-                aria-label="Enviar respuesta"
-              >
-                <Send size={16} aria-hidden="true" />
-                <span>Enviar</span>
+            {!isSummaryStep && (
+              <button type="button" className="ws-link-btn" onClick={handleJumpToSummary}>
+                Ir directo a enviar mi ficha →
               </button>
-            </div>
-            <div className="ws-composer-meta">
-              <span>
-                {storageWarning
-                  ? "Almacenamiento local restringido: tu sesión sigue activa mientras mantengas esta pestaña."
-                  : "Borrador guardado automáticamente en este navegador."}
-              </span>
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                {stepIndex > 0 && (
-                  <button type="button" className="ws-link-btn" onClick={handleStepBack}>
-                    <RotateCcw size={12} style={{ display: "inline", marginRight: 3 }} aria-hidden="true" />
-                    Etapa anterior
-                  </button>
+            )}
+          </div>
+
+          {!isSummaryStep ? (
+            <>
+              {activeInterpretation && (
+                <div className="step-advisor-note">
+                  <span className="step-advisor-icon" aria-hidden="true">
+                    <Sparkles size={15} />
+                  </span>
+                  <span>{activeInterpretation}</span>
+                </div>
+              )}
+
+              <h1 className="step-question-title">{activeQuestion}</h1>
+
+              {activeOptions.length > 0 && (
+                <div className="step-cards-grid" role="group" aria-label="Opciones rápidas">
+                  {activeOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      disabled={isSendingTurn}
+                      className={`step-option-card ${opt.kind === "neutral" ? "is-neutral" : ""}`}
+                      onClick={() => submitTurn(opt.value, opt.label, true)}
+                    >
+                      <span>{opt.label}</span>
+                      <span className="step-option-arrow" aria-hidden="true">
+                        <ArrowRight size={14} />
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <form
+                className="step-custom-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  submitTurn(inputText, inputText, false);
+                }}
+              >
+                {turnError && (
+                  <div className="composer-error" role="alert">
+                    {turnError}
+                  </div>
                 )}
+
+                <label htmlFor={stepInputId} className="step-custom-label">
+                  ¿Prefieres explicarlo con tus propias palabras?
+                </label>
+                <div className="ws-composer-row">
+                  <textarea
+                    id={stepInputId}
+                    rows={2}
+                    maxLength={1000}
+                    className="ws-input"
+                    placeholder="Escribe aquí los detalles de tu proyecto o negocio…"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        submitTurn(inputText, inputText, false);
+                      }
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={isSendingTurn || !inputText.trim()}
+                  >
+                    <span>{isSendingTurn ? "Guardando…" : "Continuar"}</span>
+                    <ArrowRight size={15} aria-hidden="true" />
+                  </button>
+                </div>
+              </form>
+
+              <div className="step-footer-nav">
+                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                  {stepIndex > 0 && (
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleStepBack}>
+                      <RotateCcw size={13} aria-hidden="true" />
+                      <span>Paso anterior</span>
+                    </button>
+                  )}
+                  <button type="button" className="ws-link-btn" onClick={handleResetDraft}>
+                    <Trash2 size={13} aria-hidden="true" />
+                    <span>Empezar de nuevo</span>
+                  </button>
+                </div>
+                <span style={{ fontSize: "0.74rem", color: "var(--ink-muted)" }}>
+                  {storageWarning ? "Sesión activa en esta pestaña" : "Guardado automático en tu navegador"}
+                </span>
+              </div>
+            </>
+          ) : (
+            /* FINAL STEP SCREEN: Summary + Direct Send to ENIX Studio */
+            <>
+              <div className="summary-hero-box">
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--status-confirmed-ink)", fontWeight: 700, fontSize: "var(--text-xs)" }}>
+                  <CheckCircle2 size={16} aria-hidden="true" />
+                  <span>Ficha lista para revisión comercial</span>
+                </div>
+                <h1 className="step-question-title" style={{ fontSize: "clamp(1.4rem, 2.2vw, 1.85rem)" }}>
+                  Envía tu proyecto al equipo de ENIX Studio
+                </h1>
+                <p style={{ fontSize: "var(--text-sm)", color: "var(--ink-secondary)", lineHeight: 1.55 }}>
+                  Revisa o edita cualquier punto de tu ficha al costado. Al enviarla, nuestro equipo revisará tu alcance para proponerte el siguiente paso concreto.
+                </p>
+              </div>
+
+              <form className="summary-submit-card" onSubmit={handleSendSubmit}>
+                <div className="send-form-grid">
+                  <div className="send-field">
+                    <label htmlFor="send-name">Tu nombre *</label>
+                    <input
+                      id="send-name"
+                      type="text"
+                      required
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      placeholder="Nombre y apellido"
+                    />
+                  </div>
+                  <div className="send-field">
+                    <label htmlFor="send-email">Correo electrónico *</label>
+                    <input
+                      id="send-email"
+                      type="email"
+                      required
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="nombre@empresa.com"
+                    />
+                  </div>
+                  <div className="send-field">
+                    <label htmlFor="send-company">Empresa o negocio (opcional)</label>
+                    <input
+                      id="send-company"
+                      type="text"
+                      value={contactCompany}
+                      onChange={(e) => setContactCompany(e.target.value)}
+                      placeholder="Nombre de tu negocio"
+                    />
+                  </div>
+                  <div className="send-field">
+                    <label htmlFor="send-phone">WhatsApp o teléfono (opcional)</label>
+                    <input
+                      id="send-phone"
+                      type="tel"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="+56 9 …"
+                    />
+                  </div>
+                </div>
+
+                {sendState.kind === "success" && (
+                  <div className="send-status-box is-ok" role="status">
+                    <strong>¡Solicitud recibida ({sendState.referenceId})!</strong> {sendState.message}
+                  </div>
+                )}
+
+                {sendState.kind === "unconfigured" && (
+                  <div className="send-status-box is-info" role="status">
+                    <p style={{ marginBottom: 8 }}>{sendState.message}</p>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                      <button type="button" className="btn btn-primary btn-sm" onClick={handleDownloadMd}>
+                        Descargar resumen (.md)
+                      </button>
+                      <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="btn btn-secondary btn-sm">
+                        Abrir correo con mi resumen
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {sendState.kind === "error" && (
+                  <div className="composer-error" role="alert">
+                    {sendState.message}
+                  </div>
+                )}
+
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleStepBack}>
+                    <RotateCcw size={13} aria-hidden="true" />
+                    <span>Volver al paso anterior</span>
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={sendState.kind === "submitting" || sendState.kind === "success"}
+                  >
+                    <Send size={15} aria-hidden="true" />
+                    <span>
+                      {sendState.kind === "submitting"
+                        ? "Enviando proyecto…"
+                        : sendState.kind === "success"
+                          ? "Proyecto enviado"
+                          : submissionConnected
+                            ? "Enviar mi proyecto a ENIX Studio"
+                            : "Solicitar evaluación"}
+                    </span>
+                  </button>
+                </div>
+              </form>
+
+              <div className="step-footer-nav">
+                <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="ws-link-btn">
+                  <Mail size={13} aria-hidden="true" />
+                  <span>Abrir resumen en mi correo</span>
+                </a>
                 <button type="button" className="ws-link-btn" onClick={handleResetDraft}>
-                  <Trash2 size={12} style={{ display: "inline", marginRight: 3 }} aria-hidden="true" />
-                  Empezar de nuevo
+                  <Trash2 size={13} aria-hidden="true" />
+                  <span>Iniciar otro proyecto</span>
                 </button>
               </div>
-            </div>
-          </form>
+            </>
+          )}
         </section>
 
-        {/* Live Editable Project Brief Column */}
+        {/* Right: Live Editable Brief Sidebar */}
         <aside
-          className={`workspace-brief-col ${mobileTab !== "brief" ? "is-hidden-mobile" : ""}`}
+          className={`workspace-brief-col ${briefPulse ? "is-pulsing" : ""} ${mobileTab !== "brief" ? "is-hidden-mobile" : ""}`}
           aria-label="Ficha editable de proyecto"
         >
           <div className="brief-head">
             <div className="brief-head-meta">
-              <span className="eyebrow" style={{ paddingBlock: "0.25rem", fontSize: "0.74rem" }}>
+              <span className="eyebrow" style={{ paddingBlock: "0.22rem", fontSize: "0.72rem" }}>
                 <span className="eyebrow-dot" aria-hidden="true" />
-                Ficha de proyecto
+                Tu ficha en vivo
               </span>
-              <span className="brief-rev">Revisión #{brief.revision}</span>
+              <span className="brief-rev">Rev. #{brief.revision}</span>
             </div>
 
             <label htmlFor={titleInputId} className="visually-hidden">
@@ -726,7 +865,7 @@ export default function ProjectWorkspace() {
               type="text"
               className="brief-editable-title"
               value={brief.title}
-              placeholder="Título provisional de tu proyecto"
+              placeholder="Título de tu proyecto"
               onChange={(e) => {
                 manualFields.add("title");
                 setBrief((prev) => ({
@@ -746,7 +885,7 @@ export default function ProjectWorkspace() {
               rows={2}
               className="brief-editable-goal"
               value={brief.goal}
-              placeholder="Resume en una o dos frases qué quieres lograr…"
+              placeholder="Resume qué quieres lograr…"
               onChange={(e) => {
                 manualFields.add("goal");
                 setBrief((prev) => ({
@@ -758,9 +897,9 @@ export default function ProjectWorkspace() {
               }}
             />
 
-            <div className="brief-legend" aria-label="Significado de los estados">
+            <div className="brief-legend">
               <span className="status-badge confirmed">Confirmado</span>
-              <span className="status-badge suggested">Sugerido (por validar)</span>
+              <span className="status-badge suggested">Sugerido</span>
               <span className="status-badge pending">Por definir</span>
             </div>
           </div>
@@ -800,7 +939,7 @@ export default function ProjectWorkspace() {
                       borderRadius: 8,
                       padding: "0.2rem 0.4rem",
                       background: "var(--bg-surface)",
-                      fontSize: "0.76rem",
+                      fontSize: "0.75rem",
                       fontWeight: 700
                     }}
                   >
@@ -814,19 +953,18 @@ export default function ProjectWorkspace() {
           </dl>
 
           {isMarketingOrCombined && (
-            <div className="brief-section" style={{ gap: "0.7rem" }}>
-              <h2 className="brief-section-title">Contexto comercial y presupuestos separados</h2>
-
+            <div className="brief-section">
+              <h2 className="brief-section-title">Contexto comercial y presupuestos</h2>
               <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label htmlFor="brief-audience-territory" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
-                  Público y territorio (editable)
+                <label htmlFor="brief-audience-territory" style={{ fontSize: "0.7rem", color: "var(--ink-muted)" }}>
+                  Público y territorio
                 </label>
                 <input
                   id="brief-audience-territory"
                   type="text"
                   className="brief-add-input"
                   value={brief.targetAudienceAndTerritory || ""}
-                  placeholder="Ej: Clientes locales en Santiago / Empresas B2B en Chile"
+                  placeholder="Ej: Clientes locales en Santiago"
                   onChange={(e) => {
                     manualFields.add("targetAudienceAndTerritory");
                     setBrief((prev) => ({
@@ -839,32 +977,10 @@ export default function ProjectWorkspace() {
                 />
               </div>
 
-              <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label htmlFor="brief-existing-channels" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
-                  Canales y activos existentes (editable)
-                </label>
-                <input
-                  id="brief-existing-channels"
-                  type="text"
-                  className="brief-add-input"
-                  value={brief.existingChannelsAndAssets || ""}
-                  placeholder="Ej: Instagram activo, web básica, sin campañas previas"
-                  onChange={(e) => {
-                    manualFields.add("existingChannelsAndAssets");
-                    setBrief((prev) => ({
-                      ...prev,
-                      existingChannelsAndAssets: e.target.value,
-                      revision: prev.revision + 1,
-                      updatedAt: new Date().toISOString()
-                    }));
-                  }}
-                />
-              </div>
-
               <div className="brief-kv-grid">
                 <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <label htmlFor="brief-ad-spend" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
-                    Inversión publicitaria (anuncios)
+                  <label htmlFor="brief-ad-spend" style={{ fontSize: "0.7rem", color: "var(--ink-muted)" }}>
+                    Inversión en anuncios
                   </label>
                   <input
                     id="brief-ad-spend"
@@ -884,8 +1000,8 @@ export default function ProjectWorkspace() {
                   />
                 </div>
                 <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <label htmlFor="brief-service-budget" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
-                    Presupuesto de servicios (honorarios)
+                  <label htmlFor="brief-service-budget" style={{ fontSize: "0.7rem", color: "var(--ink-muted)" }}>
+                    Presupuesto servicios
                   </label>
                   <input
                     id="brief-service-budget"
@@ -908,22 +1024,6 @@ export default function ProjectWorkspace() {
             </div>
           )}
 
-          {brief.indicatorsToAgree && brief.indicatorsToAgree.length > 0 && (
-            <div className="brief-section">
-              <h2 className="brief-section-title">Indicadores por acordar</h2>
-              {renderRequirementList(brief.indicatorsToAgree, "indicatorsToAgree", false)}
-            </div>
-          )}
-
-          {brief.currentSituation && (
-            <div className="brief-section">
-              <h2 className="brief-section-title">Situación actual</h2>
-              <p style={{ fontSize: "var(--text-xs)", color: "var(--ink-secondary)" }}>
-                {brief.currentSituation}
-              </p>
-            </div>
-          )}
-
           {brief.users.length > 0 && (
             <div className="brief-section">
               <h2 className="brief-section-title">Personas usuarias</h2>
@@ -937,7 +1037,7 @@ export default function ProjectWorkspace() {
               renderRequirementList(essentialRequirements, "requirements", true)
             ) : (
               <p style={{ fontSize: "var(--text-xs)", color: "var(--ink-muted)" }}>
-                A medida que respondas aparecerán aquí tus prioridades y sugerencias editables.
+                Tus respuestas y sugerencias irán apareciendo aquí paso a paso.
               </p>
             )}
 
@@ -955,7 +1055,7 @@ export default function ProjectWorkspace() {
               />
               <button type="submit" className="btn btn-secondary btn-sm">
                 <Plus size={14} aria-hidden="true" />
-                <span>Agregar</span>
+                <span>Sumar</span>
               </button>
             </form>
           </div>
@@ -967,195 +1067,32 @@ export default function ProjectWorkspace() {
             </div>
           )}
 
-          {brief.integrations.length > 0 && (
+          {brief.indicatorsToAgree && brief.indicatorsToAgree.length > 0 && (
             <div className="brief-section">
-              <h2 className="brief-section-title">Integraciones y herramientas</h2>
-              {renderRequirementList(brief.integrations, "integrations", false)}
+              <h2 className="brief-section-title">Indicadores por acordar</h2>
+              {renderRequirementList(brief.indicatorsToAgree, "indicatorsToAgree", false)}
             </div>
           )}
 
-          {brief.openQuestions.length > 0 && (
-            <div className="brief-section">
-              <h2 className="brief-section-title">Por definir</h2>
-              <ul className="brief-req-list">
-                {brief.openQuestions.map((q) => (
-                  <li key={q} className="brief-req-item">
-                    <div className="brief-req-top">
-                      <span className="brief-req-text">{q}</span>
-                      <span className="status-badge pending">Por definir</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Export & Submit Actions */}
           <div className="brief-actions-bar no-print">
             <div className="brief-export-row">
               <button type="button" className="btn btn-secondary btn-sm" onClick={handleDownloadMd}>
                 <Download size={14} aria-hidden="true" />
-                <span>Descargar .md</span>
+                <span>.md</span>
               </button>
               <button type="button" className="btn btn-secondary btn-sm" onClick={handleDownloadTxt}>
                 <FileText size={14} aria-hidden="true" />
-                <span>Descargar .txt</span>
+                <span>.txt</span>
               </button>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => window.print()}>
                 <Printer size={14} aria-hidden="true" />
-                <span>Imprimir / PDF</span>
+                <span>PDF</span>
               </button>
             </div>
-
-            <button type="button" className="btn btn-primary" onClick={openSendDialog}>
-              <Mail size={16} aria-hidden="true" />
-              <span>Solicitar evaluación a ENIX Studio</span>
-            </button>
-
-            <p className="brief-disclaimer">
-              {siteConfig.responsibilityStatement} Este documento resume tu alcance inicial y no constituye una propuesta comercial cerrada.
-            </p>
+            <p className="brief-disclaimer">{siteConfig.responsibilityStatement}</p>
           </div>
         </aside>
       </main>
-
-      {/* Native <dialog> for Reviewing and Submitting Brief */}
-      <dialog
-        ref={sendDialogRef}
-        aria-labelledby="send-dialog-title"
-        {...({ closedby: "any" } as Record<string, string>)}
-      >
-        <div className="send-dialog-body">
-          <div className="send-dialog-head">
-            <div>
-              <h2 id="send-dialog-title" className="heading-md">
-                Enviar ficha a ENIX Studio
-              </h2>
-              <p style={{ fontSize: "var(--text-xs)", color: "var(--ink-secondary)", marginTop: 4 }}>
-                Revisa exactamente qué información se compartirá antes de enviar.
-              </p>
-            </div>
-            <form method="dialog">
-              <button type="submit" className="mobile-close-btn" aria-label="Cerrar ventana">
-                <X size={18} aria-hidden="true" />
-              </button>
-            </form>
-          </div>
-
-          <form onSubmit={handleSendSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div className="send-form-grid">
-              <div className="send-field">
-                <label htmlFor="send-name">Tu nombre *</label>
-                <input
-                  id="send-name"
-                  type="text"
-                  required
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  placeholder="Nombre y apellido"
-                />
-              </div>
-              <div className="send-field">
-                <label htmlFor="send-email">Correo electrónico *</label>
-                <input
-                  id="send-email"
-                  type="email"
-                  required
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  placeholder="nombre@empresa.com"
-                />
-              </div>
-              <div className="send-field">
-                <label htmlFor="send-company">Empresa o negocio (opcional)</label>
-                <input
-                  id="send-company"
-                  type="text"
-                  value={contactCompany}
-                  onChange={(e) => setContactCompany(e.target.value)}
-                />
-              </div>
-              <div className="send-field">
-                <label htmlFor="send-phone">Teléfono o WhatsApp (opcional)</label>
-                <input
-                  id="send-phone"
-                  type="tel"
-                  value={contactPhone}
-                  onChange={(e) => setContactPhone(e.target.value)}
-                />
-              </div>
-              <div className="send-field full">
-                <label htmlFor="send-role">Cargo o rol (opcional)</label>
-                <input
-                  id="send-role"
-                  type="text"
-                  value={contactRole}
-                  onChange={(e) => setContactRole(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div>
-              <p className="brief-section-title" style={{ marginBottom: 6 }}>
-                Resumen que se incluirá
-              </p>
-              <div className="send-preview-box">{briefToPlainText(brief)}</div>
-            </div>
-
-            {sendState.kind === "success" && (
-              <div className="send-status-box is-ok" role="status">
-                <strong>Recepción confirmada ({sendState.referenceId}):</strong> {sendState.message}
-              </div>
-            )}
-
-            {sendState.kind === "unconfigured" && (
-              <div className="send-status-box is-info" role="status">
-                <p style={{ marginBottom: 8 }}>{sendState.message}</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  <button type="button" className="btn btn-primary btn-sm" onClick={handleDownloadMd}>
-                    Descargar resumen (.md)
-                  </button>
-                  <a
-                    href={buildMailtoHref(brief, siteConfig.contactEmail)}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Abrir correo con mi resumen
-                  </a>
-                </div>
-                <p style={{ fontSize: "0.7rem", marginTop: 6, color: "var(--ink-secondary)" }}>
-                  Nota: abrir tu cliente de correo no equivale a una recepción confirmada hasta que envíes el mensaje.
-                </p>
-              </div>
-            )}
-
-            {sendState.kind === "error" && (
-              <div className="composer-error" role="alert">
-                {sendState.message}
-              </div>
-            )}
-
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.75rem" }}>
-              <a
-                href={buildMailtoHref(brief, siteConfig.contactEmail)}
-                className="btn btn-secondary btn-sm"
-              >
-                Abrir correo con mi resumen
-              </a>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={sendState.kind === "submitting" || sendState.kind === "success"}
-              >
-                {sendState.kind === "submitting"
-                  ? "Enviando…"
-                  : submissionConnected
-                    ? "Enviar ficha al equipo"
-                    : "Intentar envío directo"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </dialog>
     </div>
   );
 }
