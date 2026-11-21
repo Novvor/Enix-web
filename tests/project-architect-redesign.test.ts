@@ -95,7 +95,10 @@ for (const sc of MANDATORY_SCENARIOS) {
     // 5. Avance inmediato del Project Blueprint
     assert.equal(turn.patch.category, sc.expectedCategory);
     assert.ok((turn.patch.addRequirements?.length || 0) >= 2, "Debe proponer al menos 2 capacidades concretas");
-    assert.equal(turn.commercialStage, "possibilities");
+    assert.ok(
+      turn.commercialStage === "possibilities" || turn.commercialStage === "discover",
+      `Etapa inesperada: ${turn.commercialStage}`
+    );
 
     // 6. Ausencia de promesas injustificadas o precios cerrados
     assert.doesNotMatch(turn.reply || "", /(garantizamos ventas|primer lugar garantizado|\$\d+\s*cerrado|50% de descuento)/i);
@@ -164,8 +167,8 @@ test("Manejo proactivo de 'No estoy seguro' y corrección sin reiniciar", () => 
     isSelection: true,
     history: [{ role: "user", text: "Necesito una web" }]
   });
-  assert.match(t1.interpretation, /no hay problema|cuello de botella|primera versi[oó]n/i);
-  assert.ok(t1.options.length >= 3, "Debe proponer caminos claros cuando el usuario no está seguro");
+  assert.match(t1.interpretation, /propuesta inicial|cuello de botella|primera versi[oó]n/i);
+  assert.equal(t1.offerContact, true, "Debe ofrecer acceso directo al equipo sin encadenar más preguntas");
   assert.equal(brief.idea, "Necesito una web", "No debe reiniciar ni borrar la idea original");
 });
 

@@ -200,3 +200,84 @@ test("8. Estado compartido entre superficies: normalizeLeadCapture conserva preg
   assert.equal(saved.status, "declined");
   assert.equal(saved.capturedEmail, "equipo@empresa.cl");
 });
+
+test("9. Petición vaga 'Quiero una app': pregunta breve sobre finalidad con ejemplos y NO pide correo (guiado e IA)", async () => {
+  const brief = createEmptyBrief("", null, "development");
+  const guided = processCommercialTurn(brief, "Quiero una app", {
+    pageId: "/",
+    history: [],
+    leadCapture: createInitialLeadCapture()
+  });
+  assert.equal(guided.offerContact, false, "No debe pedir correo antes de entender la finalidad");
+  assert.equal(guided.commercialStage, "discover");
+  assert.match(guided.reply || "", /reservas|pedidos|gesti[oó]n interna/i);
+  assert.doesNotMatch(guided.reply || "", /experiencia del usuario|servicios personalizados|a qu[eé] correo/i);
+  assert.ok(guided.options.length >= 3, "Debe ofrecer ejemplos rápidos conservando texto libre");
+
+  // Incluso si el LLM intentara pedir correo en petición vaga, el servidor lo bloquea
+  const coord = new InMemoryCoordinatorStore();
+  const aiRes = await handleAssistantTurn({
+    sessionId: "sess-vague-app",
+    requestId: "req-vague-app",
+    brief,
+    answer: "Quiero una app",
+    pageId: "/",
+    history: [],
+    leadCapture: createInitialLeadCapture(),
+    aiEnabled: true,
+    isProduction: false,
+    providerName: "openai",
+    model: "gpt-4o-mini",
+    coordinator: coord,
+    providerInvoker: async () => ({
+      rawJson: JSON.stringify({
+        onTopic: true,
+        interpretation: "Podemos mejorar la experiencia del usuario con servicios personalizados.",
+        question: "¿A qué correo puede escribirte el equipo de ENIX?",
+        reply: "Podemos mejorar la experiencia del usuario.\n\n¿A qué correo puede escribirte el equipo de ENIX?",
+        offerContact: true
+      }),
+      inputTokens: 150,
+      outputTokens: 60
+    })
+  });
+  assert.equal(aiRes.body.offerContact, false, "El servidor debe bloquear offerContact en petición vaga");
+  assert.doesNotMatch(String(aiRes.body.reply || ""), /a qu[eé] correo/i);
+});
+
+test("10. Necesidad clara 'Quiero una app para reservar horas en mi barbería': propuesta específica y contacto", () => {
+  const brief = createEmptyBrief("", null, "development");
+  const res = processCommercialTurn(brief, "Quiero una app para reservar horas en mi barbería", {
+    pageId: "/",
+    history: [],
+    leadCapture: createInitialLeadCapture()
+  });
+  assert.equal(res.offerContact, true, "Con necesidad clara debe ofrecer contacto tras la propuesta");
+  assert.match(res.interpretation, /barber[ií]a/i);
+  assert.match(res.interpretation, /reservas|calendario|confirmaci[oó]n/i);
+  assert.doesNotMatch(res.interpretation, /experiencia del usuario|servicios personalizados|anal[ií]tica/i);
+});
+
+test("11. Intención comercial explícita 'Quiero cotizar una app': acceso directo al contacto sin preguntas previas", () => {
+  const brief = createEmptyBrief("", null, "development");
+  const res = processCommercialTurn(brief, "Quiero cotizar una app", {
+    pageId: "/",
+    history: [],
+    leadCapture: createInitialLeadCapture()
+  });
+  assert.equal(res.offerContact, true);
+  assert.equal(res.commercialStage, "evaluation");
+  assert.match(res.question, /a qu[eé] correo puede escribirte el equipo de enix/i);
+});
+
+test("12. Rechazo 'No quiero dejar mi correo': ayuda útil sin volver a insistir", () => {
+  const brief = createEmptyBrief("Quiero una app para reservar horas en mi barbería", "applications", "development");
+  const res = processCommercialTurn(brief, "No quiero dejar mi correo", {
+    pageId: "/",
+    history: [{ role: "user", text: "Quiero una app para reservar horas en mi barbería" }],
+    leadCapture: { ...createInitialLeadCapture(), status: "offered" }
+  });
+  assert.equal(res.contactDeclined, true);
+  assert.equal(res.offerContact, false);
+  assert.doesNotMatch(res.reply || "", /a qu[eé] correo/i);
+});
