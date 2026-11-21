@@ -58,6 +58,7 @@ export const MODEL_PRICING_MICROCENTS_PER_1K: Record<
 > = {
   "gpt-4o-mini": { input: 150, output: 600, reasoning: 600, maxReasoningReservationTokens: 0 },
   "gpt-4.1-mini": { input: 400, output: 1600, reasoning: 1600, maxReasoningReservationTokens: 0 },
+  "gpt-5-mini": { input: 250, output: 2000, reasoning: 2000, maxReasoningReservationTokens: 512 },
   "gemini-2.5-flash": { input: 150, output: 600, reasoning: 600, maxReasoningReservationTokens: 512 },
   "gemini-2.0-flash": { input: 100, output: 400, reasoning: 400, maxReasoningReservationTokens: 0 },
   default: { input: 500, output: 2000, reasoning: 2000, maxReasoningReservationTokens: 512 }
@@ -217,6 +218,11 @@ export type ReservationResult =
         | "monthly_budget";
     };
 
+export interface SessionHistoryEntry {
+  role: "user" | "assistant";
+  text: string;
+}
+
 /**
  * Shared atomic coordinator contract.
  * Production MUST use a distributed persistent implementation (isDistributed = true),
@@ -249,6 +255,8 @@ export interface CoordinatorStore {
     actualMicrocents: number | null,
     countPaidTurn: boolean
   ): Promise<void>;
+  getSessionHistory?(sessionId: string): Promise<SessionHistoryEntry[]>;
+  appendSessionTurn?(sessionId: string, userText: string, assistantText: string): Promise<void>;
 }
 
 /**
@@ -265,6 +273,7 @@ export class InMemoryCoordinatorStore implements CoordinatorStore {
   private dailySpent = new Map<string, number>();
   private monthlySpent = new Map<string, number>();
   private uncertainSpent = new Map<string, number>();
+  private sessionHistory = new Map<string, SessionHistoryEntry[]>();
   private globalInFlight = 0;
 
   private limits: {
@@ -458,6 +467,24 @@ export class InMemoryCoordinatorStore implements CoordinatorStore {
     const curMonth = this.monthlySpent.get(handle.monthKey) || 0;
     this.dailySpent.set(handle.dayKey, Math.max(0, curDay + delta));
     this.monthlySpent.set(handle.monthKey, Math.max(0, curMonth + delta));
+  }
+
+  public async getSessionHistory(sessionId: string): Promise<SessionHistoryEntry[]> {
+    return (this.sessionHistory.get(sessionId) || []).slice(-16);
+  }
+
+  public async appendSessionTurn(
+    sessionId: string,
+    userText: string,
+    assistantText: string
+  ): Promise<void> {
+    const cur = this.sessionHistory.get(sessionId) || [];
+    const next: SessionHistoryEntry[] = [
+      ...cur,
+      { role: "user", text: userText.slice(0, 600) },
+      { role: "assistant", text: assistantText.slice(0, 800) }
+    ].slice(-16);
+    this.sessionHistory.set(sessionId, next);
   }
 
   public getSnapshot() {
@@ -1066,13 +1093,17 @@ export async function handleAssistantTurn(
       return { httpStatus: 200, body: { ok: true, ...baselineTurn } };
     }
 
-    // 5. Build native multi-turn messages and atomically reserve worst-case budget BEFORE calling provider
+    // 5. Reconstruct AUTHORITATIVE conversation history on the server (NEVER trust client-supplied assistant/system roles!)
+    const serverHistory: SessionHistoryEntry[] = coordinator.getSessionHistory
+      ? await coordinator.getSessionHistory(input.sessionId)
+      : [];
+
     const { messages: nativeMessages, userPayload } = buildNativeConversationMessages({
       pageId: safePageId,
       pageTitle: pageCtx.pageTitle,
       brief: input.brief,
       cleanAnswer,
-      history: input.history,
+      history: serverHistory,
       currentCommercialStage: input.currentCommercialStage,
       leadCapture: normalizedLead
     });
@@ -1259,6 +1290,9 @@ export async function handleAssistantTurn(
 
       if (acquiredIdem && reqId) {
         await coordinator.completeIdempotency(input.sessionId, reqId, contentHash, aiResponse);
+      }
+      if (coordinator.appendSessionTurn && validated.onTopic) {
+        await coordinator.appendSessionTurn(input.sessionId, cleanAnswer, finalReply);
       }
       return { httpStatus: 200, body: { ok: true, ...aiResponse, diagnostics } };
     } catch {

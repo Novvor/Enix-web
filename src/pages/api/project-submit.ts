@@ -143,6 +143,7 @@ export const POST: APIRoute = async ({ request }) => {
       quickContact?: boolean;
       sourcePage?: string;
       brief?: ProjectBrief;
+      conversationExcerpt?: Array<{ role?: string; text?: string }>;
       contact?: { name?: string; email?: string; company?: string; role?: string; phone?: string };
     } | null;
 
@@ -216,7 +217,23 @@ export const POST: APIRoute = async ({ request }) => {
       readiness && readiness.toClarify.length > 0
         ? `\n\n--- Información pendiente por aclarar con el cliente ---\n- ${readiness.toClarify.join("\n- ")}`
         : "";
-    const summaryText = `${baseSummary}${pendingSection}`.trim() || "Solicitud rápida desde el chat (sin ficha ampliada aún).";
+    const excerptLines = Array.isArray(body.conversationExcerpt)
+      ? body.conversationExcerpt
+          .slice(-10)
+          .map((item) => {
+            const who = item?.role === "Steve" || item?.role === "assistant" ? "Steve" : "Visitante";
+            const txt = sanitize(item?.text, 400);
+            return txt ? `[${who}]: ${txt}` : "";
+          })
+          .filter(Boolean)
+      : [];
+    const conversationSection =
+      excerptLines.length > 0
+        ? `\n\n--- Contexto de la conversación con Steve ---\n${excerptLines.join("\n\n")}`
+        : "";
+    const summaryText =
+      `${baseSummary}${pendingSection}${conversationSection}`.trim() ||
+      "Solicitud rápida desde el chat (sin ficha ampliada aún).";
 
     const internalHtml = `
       <div style="font-family:Inter,Arial,sans-serif;background:#FAF8F6;padding:24px;color:#301B3C;">

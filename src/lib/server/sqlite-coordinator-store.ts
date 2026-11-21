@@ -5,7 +5,8 @@ import {
   type AcquireIdempotencyResult,
   type CoordinatorStore,
   type ReservationHandle,
-  type ReservationResult
+  type ReservationResult,
+  type SessionHistoryEntry
 } from "./assistant-guard.ts";
 import { StoreUnavailableError } from "./upstash-redis-store.ts";
 import type { AssistantTurnResponse } from "../project/schema.ts";
@@ -70,6 +71,11 @@ export class SqliteCoordinatorStore implements CoordinatorStore {
       CREATE TABLE IF NOT EXISTS ledger (
         bucket_key TEXT PRIMARY KEY,
         spent_microcents INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS session_history (
+        session_id TEXT PRIMARY KEY,
+        history_json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
       );
     `);
 
@@ -362,6 +368,51 @@ export class SqliteCoordinatorStore implements CoordinatorStore {
     const ledger: Record<string, number> = {};
     for (const r of rows) ledger[r.bucket_key] = Number(r.spent_microcents);
     return { activeReservations, ledger };
+  }
+
+  public async getSessionHistory(sessionId: string): Promise<SessionHistoryEntry[]> {
+    this.ensureOpen();
+    const row = this.db
+      .prepare("SELECT history_json FROM session_history WHERE session_id = ?")
+      .get(sessionId) as { history_json: string } | undefined;
+    if (!row) return [];
+    try {
+      const parsed = JSON.parse(row.history_json) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter(
+          (item): item is SessionHistoryEntry =>
+            Boolean(
+              item &&
+                typeof item === "object" &&
+                ((item as SessionHistoryEntry).role === "user" ||
+                  (item as SessionHistoryEntry).role === "assistant") &&
+                typeof (item as SessionHistoryEntry).text === "string"
+            )
+        )
+        .slice(-16);
+    } catch {
+      return [];
+    }
+  }
+
+  public async appendSessionTurn(
+    sessionId: string,
+    userText: string,
+    assistantText: string
+  ): Promise<void> {
+    this.ensureOpen();
+    const current = await this.getSessionHistory(sessionId);
+    const next: SessionHistoryEntry[] = [
+      ...current,
+      { role: "user", text: userText.slice(0, 600) },
+      { role: "assistant", text: assistantText.slice(0, 800) }
+    ].slice(-16);
+    this.db
+      .prepare(
+        "INSERT OR REPLACE INTO session_history (session_id, history_json, updated_at) VALUES (?, ?, ?)"
+      )
+      .run(sessionId, JSON.stringify(next), Date.now());
   }
 
   public close(): void {

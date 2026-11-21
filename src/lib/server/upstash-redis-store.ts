@@ -4,7 +4,8 @@ import {
   type AcquireIdempotencyResult,
   type CoordinatorStore,
   type ReservationHandle,
-  type ReservationResult
+  type ReservationResult,
+  type SessionHistoryEntry
 } from "./assistant-guard.ts";
 import type { AssistantTurnResponse } from "../project/schema.ts";
 
@@ -399,5 +400,46 @@ export class UpstashRedisCoordinatorStore implements CoordinatorStore {
       actualMicrocents === null ? -1 : actualMicrocents,
       countPaidTurn ? "1" : "0"
     ]);
+  }
+
+  public async getSessionHistory(sessionId: string): Promise<SessionHistoryEntry[]> {
+    try {
+      const raw = await this.execCommand<string | null>(["GET", this.k(`hist:${sessionId}`)]);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter(
+          (item): item is SessionHistoryEntry =>
+            Boolean(
+              item &&
+                typeof item === "object" &&
+                ((item as SessionHistoryEntry).role === "user" ||
+                  (item as SessionHistoryEntry).role === "assistant") &&
+                typeof (item as SessionHistoryEntry).text === "string"
+            )
+        )
+        .slice(-16);
+    } catch {
+      return [];
+    }
+  }
+
+  public async appendSessionTurn(
+    sessionId: string,
+    userText: string,
+    assistantText: string
+  ): Promise<void> {
+    try {
+      const current = await this.getSessionHistory(sessionId);
+      const next: SessionHistoryEntry[] = [
+        ...current,
+        { role: "user", text: userText.slice(0, 600) },
+        { role: "assistant", text: assistantText.slice(0, 800) }
+      ].slice(-16);
+      await this.execCommand(["SET", this.k(`hist:${sessionId}`), JSON.stringify(next), "EX", 86400]);
+    } catch {
+      // Non-fatal: history persistence failure should never block an already completed turn
+    }
   }
 }

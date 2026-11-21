@@ -325,6 +325,11 @@ export async function submitInlineContact(params: {
   }
 
   try {
+    const conversationExcerpt = (params.draft.messages || []).slice(-10).map((m) => ({
+      role: m.role === "assistant" ? "Steve" : "Visitante",
+      text: m.text.slice(0, 400)
+    }));
+
     const res = await fetch("/api/project-submit/", {
       method: "POST",
       credentials: "same-origin",
@@ -334,7 +339,8 @@ export async function submitInlineContact(params: {
         email: cleanEmail,
         sourcePage: params.sourcePage,
         idempotencyKey: params.idempotencyKey,
-        brief: params.draft.brief
+        brief: params.draft.brief,
+        conversationExcerpt
       })
     });
 
