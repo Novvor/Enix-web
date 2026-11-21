@@ -70,7 +70,9 @@ const jsonLdNodes = [
                 </ul>
               </div>
               <div class="mkt-service-actions">
-                <a href={`/marketing/${srv.slug}/`} class="btn btn-secondary btn-sm">Ver detalle</a>
+                <a href={`/marketing/${srv.slug}/`} class="btn btn-secondary btn-sm">
+                  Explorar {srv.name.toLowerCase()}
+                </a>
                 <a
                   href={`/create-project/?category=${srv.slug}`}
                   class="btn btn-primary btn-sm"

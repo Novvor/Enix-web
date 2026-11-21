@@ -109,7 +109,7 @@ test("marketing track: restaurant ads uses commercial questions and separates ad
   const md = briefToMarkdown(brief);
   assert.match(md, /Marketing digital y marca/);
   assert.match(md, /Inversión publicitaria \(anuncios en plataformas\):\*\* \$400\.000 CLP\/mes/);
-  assert.match(md, /Presupuesto de servicios \(estrategia, creación y gestión\):\*\* Por definir/);
+  assert.match(md, /Presupuesto de servicios \(honorarios ENIX\):\*\* Por definir/);
   assert.match(md, /## Indicadores por acordar/);
 });
 

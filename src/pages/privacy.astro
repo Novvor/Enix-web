@@ -1,0 +1,101 @@
+---
+import MarketingLayout from "@/layouts/MarketingLayout.astro";
+import { siteConfig } from "@/content/site";
+import { buildBreadcrumbSchema } from "@/lib/seo/schema";
+
+const jsonLdNodes = [
+  buildBreadcrumbSchema([
+    { name: "Portada", path: "/" },
+    { name: "Privacidad y uso de datos", path: "/privacy/" }
+  ])
+];
+---
+
+<MarketingLayout
+  title="Privacidad y uso de datos — ENIX Studio"
+  description="Cómo tratamos los datos que compartes al escribirnos o enviar una ficha de proyecto en ENIX Studio."
+  jsonLdNodes={jsonLdNodes}
+>
+  <section class="section">
+    <div class="container privacy-container">
+      <div class="eyebrow">
+        <span class="eyebrow-dot" aria-hidden="true"></span>
+        <span>Transparencia de datos</span>
+      </div>
+      <h1 class="heading-xl">Privacidad y uso de datos</h1>
+      <p class="lead">
+        Esta página describe de forma concreta cómo manejamos la información que compartes voluntariamente en <strong>ENIX Studio</strong> (parte de {siteConfig.legalParent}).
+      </p>
+
+      <div class="privacy-blocks">
+        <article class="privacy-card">
+          <h2 class="heading-md">1. Quién recibe tu solicitud</h2>
+          <p>
+            Cuando envías una consulta desde <a href="/contact/" class="inline-link">/contact/</a> o envías tu ficha desde <a href="/create-project/" class="inline-link">/create-project/</a>, la información es recibida por la dirección de proyectos de ENIX Studio en el buzón <a href={`mailto:${siteConfig.contactEmail}`} class="inline-link">{siteConfig.contactEmail}</a>.
+          </p>
+        </article>
+
+        <article class="privacy-card">
+          <h2 class="heading-md">2. Para qué usamos tus datos</h2>
+          <p>
+            Utilizamos tu nombre, correo electrónico, datos opcionales de contacto y el resumen de tu proyecto exclusivamente para evaluar tu solicitud, responderte y coordinar una conversación de encaje si decides avanzar. <strong>No te suscribimos automáticamente a boletines ni listas de marketing</strong> y no vendemos ni cedemos tus datos a terceros.
+          </p>
+        </article>
+
+        <article class="privacy-card">
+          <h2 class="heading-md">3. Borradores en tu navegador</h2>
+          <p>
+            Mientras completas el asistente de proyectos sin enviar el formulario, tu borrador se guarda únicamente en el almacenamiento local de tu propio navegador (con caducidad automática de 14 días) para que no pierdas tu avance. Puedes borrarlo en cualquier momento pulsando «Reiniciar» o limpiando los datos del navegador.
+          </p>
+        </article>
+
+        <article class="privacy-card">
+          <h2 class="heading-md">4. Consultas, corrección o eliminación</h2>
+          <p>
+            Si enviaste una solicitud y deseas actualizar o eliminar tus datos de nuestros registros de contacto, escríbenos directamente a <a href={`mailto:${siteConfig.contactEmail}`} class="inline-link">{siteConfig.contactEmail}</a> indicando el correo con el que nos contactaste.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+</MarketingLayout>
+
+<style>
+  .privacy-container {
+    max-inline-size: 820px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .privacy-blocks {
+    inline-size: 100%;
+    margin-block-start: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .privacy-card {
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .privacy-card p {
+    font-size: var(--text-sm);
+    color: var(--ink-secondary);
+    line-height: 1.65;
+  }
+
+  .inline-link {
+    color: var(--accent-deep);
+    font-weight: 600;
+    text-decoration: underline;
+  }
+</style>

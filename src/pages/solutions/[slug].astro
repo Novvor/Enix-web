@@ -17,6 +17,13 @@ interface Props {
 
 const { solution } = Astro.props;
 const others = solutions.filter((s) => s.slug !== solution.slug).slice(0, 3);
+const demoMap: Record<string, { href: string; label: string }> = {
+  websites: { href: "/demos/bookings/", label: "Probar demostración de agenda y reservas →" },
+  applications: { href: "/demos/bookings/", label: "Probar demostración de reservas →" },
+  "management-systems": { href: "/demos/order-management/", label: "Probar demostración de gestión de pedidos →" },
+  automations: { href: "/demos/automation/", label: "Probar demostración de automatización →" }
+};
+const relatedDemo = demoMap[solution.slug];
 const jsonLdNodes = [
   buildBreadcrumbSchema([
     { name: "Portada", path: "/" },
@@ -96,6 +103,13 @@ const jsonLdNodes = [
               <li>{h}</li>
             ))}
           </ul>
+          {relatedDemo && (
+            <div style="margin-top: 0.5rem;">
+              <a href={relatedDemo.href} class="btn btn-secondary btn-sm">
+                {relatedDemo.label}
+              </a>
+            </div>
+          )}
         </article>
       </div>
 

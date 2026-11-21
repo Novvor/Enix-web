@@ -91,15 +91,21 @@ export function inferCategoryFromIdea(idea: string, track?: ProjectTrack): strin
 
   if (resolvedTrack === "marketing") {
     if (/(marca|branding|identidad|logo|piezas gr[aá]ficas)/.test(text)) return "brand-design";
-    if (/(publicidad|google ads|meta ads|anuncios|campa[nñ]a|pauta)/.test(text)) return "digital-advertising";
+    if (/(publicidad|google ads|meta ads|anuncios|campa[nñ]a|pauta|instagram|facebook)/.test(text)) {
+      return "digital-advertising";
+    }
     if (/(seo|google|org[aá]nico|b[uú]squedas locales|maps)/.test(text)) return "seo-local";
-    if (/(redes|instagram|contenido|editorial|publicaciones)/.test(text)) return "content-social";
+    if (/(redes|contenido|editorial|publicaciones)/.test(text)) return "content-social";
     if (/(email|correo|seguimiento|crm)/.test(text)) return "email-crm-automation";
     if (/(anal[ií]tica|conversi[oó]n|medici[oó]n|embudo)/.test(text)) return "analytics-cro";
     if (/(estrategia|atraer|captar|clientes|reservas)/.test(text)) return "digital-strategy";
     return "marketing";
   }
 
+  // ENX-04: Prioritize explicit website intent before secondary keywords like "whatsapp" or "reservas"
+  if (/(quiero|necesito|crear|hacer|dise[nñ]ar|nueva|renovar)\s+(un\s+|una\s+)?(sitio\s+|p[aá]gina\s+)?web\b|sitio web|p[aá]gina web/.test(text)) {
+    return "websites";
+  }
   if (/(ia|inteligencia artificial|chatbot|asistente|rag|documento|pdf|resumir)/.test(text)) {
     return "ai-solutions";
   }
@@ -109,7 +115,7 @@ export function inferCategoryFromIdea(idea: string, track?: ProjectTrack): strin
   if (/(portal|clientes puedan|proveedores|distribuidores|colaboradores|b2b|intranet)/.test(text)) {
     return "platforms";
   }
-  if (/(pedido|inventario|bodega|excel|whatsapp|gesti[oó]n|erp|crm|stock|despacho|ordenar la operaci)/.test(text)) {
+  if (/(pedido|inventario|bodega|excel|gesti[oó]n|erp|stock|despacho|ordenar la operaci)/.test(text)) {
     return "management-systems";
   }
   if (/(app|aplicaci[oó]n|celular|m[oó]vil|ios|android|reservar|reserva|agenda)/.test(text)) {
@@ -119,6 +125,64 @@ export function inferCategoryFromIdea(idea: string, track?: ProjectTrack): strin
     return "websites";
   }
   return null;
+}
+
+/** Extracts explicitly declared capabilities from the user's initial idea (ENX-04). */
+function extractDeclaredCapabilities(idea: string): {
+  requirements: Requirement[];
+  integrations: Requirement[];
+} {
+  const text = idea.toLowerCase();
+  const requirements: Requirement[] = [];
+  const integrations: Requirement[] = [];
+
+  if (/(reserva|agend|cita|hora online)/.test(text)) {
+    requirements.push(makeRequirement("Reservas online integradas", "confirmed", "user", "initial", "dec"));
+  }
+  if (/(pago|abono|cobro|webpay|mercado pago|tarjeta)/.test(text)) {
+    requirements.push(makeRequirement("Pagos o abonos en línea", "confirmed", "user", "initial", "dec"));
+  }
+  if (/(whatsapp|recordatorio)/.test(text)) {
+    integrations.push(makeRequirement("Recordatorios o avisos por WhatsApp", "confirmed", "user", "initial", "dec"));
+  }
+
+  return { requirements, integrations };
+}
+
+/** Parses free-text timeline, ad spend, and service fees cleanly (ENX-01). */
+export function parseMarketingBudgetAndDates(raw: string): {
+  timeline: string | null;
+  adSpend: string | null;
+  serviceBudget: string | null;
+} {
+  // Split on sentence boundaries only (do NOT split thousands separators like "300.000")
+  const sentences = raw
+    .split(/(?:\.(?:\s+|$)|[!?\n]+|;\s*)/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  let timeline: string | null = null;
+  let adSpend: string | null = null;
+  let serviceBudget: string | null = null;
+
+  for (const part of sentences) {
+    const low = part.toLowerCase();
+    if (/(anuncio|pauta|publicidad|ads|meta|google)/.test(low) && /(presupuesto|inversi[oó]n|clp|usd|\$|mes|mensual|cotizar|definir)/.test(low)) {
+      const cleaned = part.replace(/^.*?:\s*/, "").trim();
+      adSpend = cleaned || part;
+    } else if (/(honorario|servicio|enix|gesti[oó]n|agencia)/.test(low)) {
+      const cleaned = part.replace(/^.*?:\s*/, "").trim();
+      serviceBudget = cleaned || part;
+    } else if (/(lanzar|empezar|iniciar|inicio|mes|meses|semana|semanas|trimestre|fecha|plazo|pr[oó]ximo)/.test(low)) {
+      timeline = timeline ? `${timeline}. ${part}` : part;
+    }
+  }
+
+  if (!timeline && !adSpend && !serviceBudget) {
+    timeline = raw.trim();
+  }
+
+  return { timeline, adSpend, serviceBudget };
 }
 
 export function inferAudienceFromText(text: string): "entrepreneur" | "business" | "undetermined" {
@@ -279,8 +343,8 @@ export function getQuestionForStep(stepId: string, brief: ProjectBrief): {
         stage: "needs",
         question: "¿Qué web, redes o contenidos tienes hoy y qué acciones de marketing ya probaste?",
         options: [
-          { id: "mh-1", label: "Tengo redes activas, pero sin web o web básica", value: "Redes activas, sin web optimizada; aún no hemos hecho campañas estructuradas" },
-          { id: "mh-2", label: "Ya probé anuncios pero con pocos resultados", value: "Ya tenemos web y probamos anuncios antes, pero sin suficiente conversión ni medición clara" },
+          { id: "mh-1", label: "Tengo redes activas, sin web optimizada", value: "Redes activas, sin web optimizada" },
+          { id: "mh-2", label: "Ya probé anuncios pero con pocos resultados", value: "Ya probé anuncios anteriormente, pero con pocos resultados" },
           { id: "mh-3", label: "Empezamos casi desde cero", value: "Empezamos desde cero en canales digitales y contenidos" },
           { id: "mh-skip", label: "Por definir", value: "__unknown__", kind: "neutral" }
         ]
@@ -509,6 +573,7 @@ export function startGuidedSession(
   };
 
   if (cleanIdea) {
+    const declared = extractDeclaredCapabilities(cleanIdea);
     patch.addRequirements = [
       makeRequirement(
         cleanIdea.length > 140 ? `${cleanIdea.slice(0, 137)}…` : cleanIdea,
@@ -516,8 +581,12 @@ export function startGuidedSession(
         "user",
         "initial",
         "idea"
-      )
+      ),
+      ...declared.requirements
     ];
+    if (declared.integrations.length > 0) {
+      patch.addIntegrations = declared.integrations;
+    }
     if (track === "marketing" || track === "combined") {
       patch.commercialGoal = cleanIdea;
       patch.addIndicators = getMarketingIndicatorsSuggestions(detectedCategory);
@@ -656,10 +725,15 @@ export function processGuidedAnswer(
       patch.addOpenQuestions = ["Precisar la oferta del negocio y el objetivo comercial prioritario."];
       interpretation = "Dejamos el objetivo comercial por definir para revisarlo luego.";
     } else {
+      const inferredMktCat =
+        nextTrack === "marketing" ? inferCategoryFromIdea(answer, "marketing") || brief.category : brief.category;
+      patch.category = inferredMktCat;
+      patch.title = deriveProvisionalTitle(answer, inferredMktCat);
+      patch.goal = answer;
       patch.businessOffer = brief.businessOffer || answer;
       patch.commercialGoal = answer;
       patch.addRequirements = [makeRequirement(answer, "confirmed", origin, "initial", "goal")];
-      interpretation = "Registré tu objetivo comercial en la ficha.";
+      interpretation = "Registré tu negocio y objetivo comercial en la ficha.";
     }
   } else if (stepId === "mkt_audience_territory") {
     if (isUnknown || isSkip) {
@@ -694,6 +768,9 @@ export function processGuidedAnswer(
       patch.engagementModality = "undecided";
       patch.addOpenQuestions = ["Definir si conviene trabajo puntual o acompañamiento periódico."];
       interpretation = "Dejamos la modalidad de trabajo como «Por definir».";
+    } else if (answer === "one-time-then-ongoing" || (/puntual/i.test(answer) && /(continuidad|evaluar|luego|despu[eé]s)/i.test(answer))) {
+      patch.engagementModality = "one-time-then-ongoing";
+      interpretation = "Registré modalidad mixta: trabajo puntual inicial y evaluación de continuidad.";
     } else if (answer === "one-time" || /puntual/i.test(answer)) {
       patch.engagementModality = "one-time";
       interpretation = "Registré preferencia por trabajo puntual.";
@@ -715,11 +792,20 @@ export function processGuidedAnswer(
       ];
       interpretation = "Dejamos fechas, inversión publicitaria y honorarios como «Por definir».";
     } else {
-      patch.declaredTimeline = answer;
-      if (!brief.adSpendBudget) patch.adSpendBudget = "Por definir (separado de honorarios)";
-      if (!brief.serviceBudget) patch.serviceBudget = "Por definir según alcance";
+      const parsed = parseMarketingBudgetAndDates(answer);
+      patch.declaredTimeline = parsed.timeline || "Por definir";
+      if (parsed.adSpend) {
+        patch.adSpendBudget = parsed.adSpend;
+      } else if (!brief.adSpendBudget) {
+        patch.adSpendBudget = "Por definir";
+      }
+      if (parsed.serviceBudget) {
+        patch.serviceBudget = parsed.serviceBudget;
+      } else if (!brief.serviceBudget) {
+        patch.serviceBudget = "Por definir";
+      }
       interpretation =
-        "Registré tus expectativas de fechas. En la ficha puedes editar por separado la inversión en anuncios y el presupuesto de servicios.";
+        "Separé tus expectativas de lanzamiento, inversión en anuncios y honorarios en tu ficha. Puedes ajustarlos libremente antes de enviar.";
     }
     patch.nextStep =
       "Revisa tu ficha, confirma o ajusta sugerencias e indicadores, descarga el resumen o compártelo con el equipo de ENIX Studio.";
@@ -737,7 +823,6 @@ export function processGuidedAnswer(
       interpretation = "Anotado como pendiente para la evaluación inicial.";
     } else {
       patch.currentSituation = answer;
-      patch.expectedOutcome = `Resolver de forma ordenada: ${answer}`;
       patch.addRequirements = getDomainSuggestions(brief.category, nextTrack);
       interpretation =
         "Registré el contexto actual y agregué algunas sugerencias en la ficha (marcadas en naranja) para que decidas si te sirven.";

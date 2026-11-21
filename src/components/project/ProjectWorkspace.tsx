@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Copy,
   Download,
   Eye,
   FileText,
@@ -47,9 +48,9 @@ import {
 import {
   briefToMarkdown,
   briefToPlainText,
-  buildMailtoHref,
   buildSlugFilename,
-  downloadTextFile
+  downloadTextFile,
+  prepareMailto
 } from "@/lib/project/export";
 import {
   getQuestionForStep,
@@ -78,6 +79,7 @@ export default function ProjectWorkspace() {
   const [submissionConnected, setSubmissionConnected] = useState<boolean>(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>("");
   const [newReqText, setNewReqText] = useState("");
+  const [copiedFull, setCopiedFull] = useState(false);
   const [manualFields] = useState<Set<string>>(() => new Set());
   const [hydrated, setHydrated] = useState(false);
 
@@ -98,8 +100,6 @@ export default function ProjectWorkspace() {
   const idempotencyRef = useRef<string>(uid("idem"));
 
   const stepInputId = useId();
-  const titleInputId = useId();
-  const goalInputId = useId();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -417,6 +417,22 @@ export default function ProjectWorkspace() {
     trackProjectEvent("enix_project_download", { track: brief.track, format: "txt" });
   }
 
+  async function handleCopyFullBrief() {
+    try {
+      await navigator.clipboard.writeText(briefToPlainText(brief));
+      setCopiedFull(true);
+      setLiveAnnouncement("Ficha completa copiada al portapapeles.");
+      window.setTimeout(() => setCopiedFull(false), 2600);
+    } catch {
+      handleDownloadTxt();
+    }
+  }
+
+  const mailtoPrepared = useMemo(
+    () => prepareMailto(brief, siteConfig.contactEmail),
+    [brief]
+  );
+
   async function handleSendSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!contactName.trim() || !contactEmail.trim()) {
@@ -509,14 +525,18 @@ export default function ProjectWorkspace() {
     </ul>
   );
 
-  const renderEditableBriefContent = () => (
+  const renderEditableBriefContent = (scope: "main" | "preview") => (
     <>
       <div className="brief-head-meta">
         <span className="eyebrow" style={{ paddingBlock: "0.22rem", fontSize: "0.72rem" }}>
           <span className="eyebrow-dot" aria-hidden="true" />
           Ficha editable · {TRACK_LABELS[brief.track || "development"]}
         </span>
-        <div style={{ display: "flex", gap: "0.4rem" }} className="no-print">
+        <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }} className="no-print">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={handleCopyFullBrief}>
+            <Copy size={13} aria-hidden="true" />
+            <span>{copiedFull ? "¡Copiada!" : "Copiar íntegra"}</span>
+          </button>
           <button type="button" className="btn btn-secondary btn-sm" onClick={handleDownloadMd}>
             <Download size={13} aria-hidden="true" />
             <span>.md</span>
@@ -533,15 +553,15 @@ export default function ProjectWorkspace() {
       </div>
 
       <div>
-        <label htmlFor={titleInputId} className="visually-hidden">
+        <label htmlFor={`${scope}-title`} className="visually-hidden">
           Título provisional del proyecto
         </label>
         <input
-          id={titleInputId}
+          id={`${scope}-title`}
           type="text"
           className="brief-editable-title"
           value={brief.title}
-          placeholder="Título de tu proyecto"
+          placeholder="Título provisional de tu proyecto"
           onChange={(e) => {
             manualFields.add("title");
             setBrief((prev) => ({
@@ -555,11 +575,11 @@ export default function ProjectWorkspace() {
       </div>
 
       <div className="brief-section">
-        <label htmlFor={goalInputId} className="brief-section-title">
+        <label htmlFor={`${scope}-goal`} className="brief-section-title">
           Objetivo principal (editable)
         </label>
         <textarea
-          id={goalInputId}
+          id={`${scope}-goal`}
           rows={2}
           className="brief-editable-goal"
           value={brief.goal}
@@ -576,64 +596,158 @@ export default function ProjectWorkspace() {
         />
       </div>
 
-      <dl className="brief-kv-grid">
-        <div className="brief-kv">
-          <dt>{isMarketingOrCombined ? "Línea principal" : "Tipo de solución"}</dt>
-          <dd>{brief.category ? CATEGORY_LABELS[brief.category] || brief.category : "Por definir"}</dd>
+      <div className="brief-kv-grid">
+        <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label htmlFor={`${scope}-category`} style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+            {isMarketingOrCombined ? "Línea principal" : "Tipo de solución"}
+          </label>
+          <select
+            id={`${scope}-category`}
+            value={brief.category || "undetermined"}
+            onChange={(e) => {
+              manualFields.add("category");
+              setBrief((prev) => ({
+                ...prev,
+                category: e.target.value,
+                revision: prev.revision + 1,
+                updatedAt: new Date().toISOString()
+              }));
+            }}
+            style={{
+              width: "100%",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 8,
+              padding: "0.3rem 0.45rem",
+              background: "var(--bg-surface)",
+              fontSize: "0.78rem",
+              fontWeight: 700
+            }}
+          >
+            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="brief-kv">
-          <dt>Fechas / plazo</dt>
-          <dd>{brief.declaredTimeline || "Por definir"}</dd>
+
+        <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label htmlFor={`${scope}-timeline`} style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+            Expectativa de fechas / lanzamiento
+          </label>
+          <input
+            id={`${scope}-timeline`}
+            type="text"
+            className="brief-add-input"
+            value={brief.declaredTimeline || ""}
+            placeholder="Por definir"
+            onChange={(e) => {
+              manualFields.add("declaredTimeline");
+              setBrief((prev) => ({
+                ...prev,
+                declaredTimeline: e.target.value || null,
+                revision: prev.revision + 1,
+                updatedAt: new Date().toISOString()
+              }));
+            }}
+          />
         </div>
+
         {isMarketingOrCombined && (
-          <div className="brief-kv">
-            <dt>Modalidad</dt>
-            <dd>
-              <select
-                aria-label="Modalidad de trabajo"
-                value={brief.engagementModality || "undecided"}
-                onChange={(e) => {
-                  manualFields.add("engagementModality");
-                  setBrief((prev) => ({
-                    ...prev,
-                    engagementModality: e.target.value as EngagementModality,
-                    revision: prev.revision + 1,
-                    updatedAt: new Date().toISOString()
-                  }));
-                }}
-                style={{
-                  width: "100%",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: 8,
-                  padding: "0.2rem 0.4rem",
-                  background: "var(--bg-surface)",
-                  fontSize: "0.78rem",
-                  fontWeight: 700
-                }}
-              >
-                <option value="undecided">{MODALITY_LABELS.undecided}</option>
-                <option value="one-time">{MODALITY_LABELS["one-time"]}</option>
-                <option value="ongoing">{MODALITY_LABELS.ongoing}</option>
-              </select>
-            </dd>
+          <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label htmlFor={`${scope}-modality`} style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+              Modalidad de trabajo
+            </label>
+            <select
+              id={`${scope}-modality`}
+              value={brief.engagementModality || "undecided"}
+              onChange={(e) => {
+                manualFields.add("engagementModality");
+                setBrief((prev) => ({
+                  ...prev,
+                  engagementModality: e.target.value as EngagementModality,
+                  revision: prev.revision + 1,
+                  updatedAt: new Date().toISOString()
+                }));
+              }}
+              style={{
+                width: "100%",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: 8,
+                padding: "0.3rem 0.45rem",
+                background: "var(--bg-surface)",
+                fontSize: "0.78rem",
+                fontWeight: 700
+              }}
+            >
+              <option value="undecided">{MODALITY_LABELS.undecided}</option>
+              <option value="one-time">{MODALITY_LABELS["one-time"]}</option>
+              <option value="one-time-then-ongoing">{MODALITY_LABELS["one-time-then-ongoing"]}</option>
+              <option value="ongoing">{MODALITY_LABELS.ongoing}</option>
+            </select>
           </div>
         )}
+
         {isMarketingOrCombined && (
-          <div className="brief-kv">
-            <dt>Público y territorio</dt>
-            <dd>{brief.targetAudienceAndTerritory || "Por definir"}</dd>
+          <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label htmlFor={`${scope}-audience`} style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+              Público y territorio
+            </label>
+            <input
+              id={`${scope}-audience`}
+              type="text"
+              className="brief-add-input"
+              value={brief.targetAudienceAndTerritory || ""}
+              placeholder="Ej: Clientes locales en Santiago"
+              onChange={(e) => {
+                manualFields.add("targetAudienceAndTerritory");
+                setBrief((prev) => ({
+                  ...prev,
+                  targetAudienceAndTerritory: e.target.value,
+                  revision: prev.revision + 1,
+                  updatedAt: new Date().toISOString()
+                }));
+              }}
+            />
           </div>
         )}
-      </dl>
+      </div>
+
+      {/* Situación actual / canales declarados (ENX-03: visible y editable igual que en exportación) */}
+      {(brief.currentSituation || brief.existingChannelsAndAssets || isMarketingOrCombined) && (
+        <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <label htmlFor={`${scope}-situation`} style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+            {isMarketingOrCombined ? "Canales y antecedentes declarados" : "Situación actual"}
+          </label>
+          <input
+            id={`${scope}-situation`}
+            type="text"
+            className="brief-add-input"
+            value={isMarketingOrCombined ? brief.existingChannelsAndAssets || brief.currentSituation : brief.currentSituation}
+            placeholder="Por definir"
+            onChange={(e) => {
+              manualFields.add("currentSituation");
+              manualFields.add("existingChannelsAndAssets");
+              setBrief((prev) => ({
+                ...prev,
+                currentSituation: e.target.value,
+                existingChannelsAndAssets: isMarketingOrCombined ? e.target.value : prev.existingChannelsAndAssets,
+                revision: prev.revision + 1,
+                updatedAt: new Date().toISOString()
+              }));
+            }}
+          />
+        </div>
+      )}
 
       {isMarketingOrCombined && (
         <div className="brief-kv-grid">
           <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <label htmlFor="brief-ad-spend" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+            <label htmlFor={`${scope}-ad-spend`} style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
               Inversión publicitaria (anuncios)
             </label>
             <input
-              id="brief-ad-spend"
+              id={`${scope}-ad-spend`}
               type="text"
               className="brief-add-input"
               value={brief.adSpendBudget || ""}
@@ -650,11 +764,11 @@ export default function ProjectWorkspace() {
             />
           </div>
           <div className="brief-kv" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <label htmlFor="brief-service-budget" style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
-              Presupuesto de servicios (honorarios)
+            <label htmlFor={`${scope}-service-budget`} style={{ fontSize: "0.72rem", color: "var(--ink-muted)" }}>
+              Presupuesto de servicios (honorarios ENIX)
             </label>
             <input
-              id="brief-service-budget"
+              id={`${scope}-service-budget`}
               type="text"
               className="brief-add-input"
               value={brief.serviceBudget || ""}
@@ -691,11 +805,11 @@ export default function ProjectWorkspace() {
         )}
 
         <form className="brief-add-row no-print" onSubmit={handleAddManualReq}>
-          <label htmlFor="add-req-input" className="visually-hidden">
+          <label htmlFor={`${scope}-add-req`} className="visually-hidden">
             Agregar requisito manual
           </label>
           <input
-            id="add-req-input"
+            id={`${scope}-add-req`}
             type="text"
             className="brief-add-input"
             placeholder="Agregar otro detalle o requisito…"
@@ -716,10 +830,33 @@ export default function ProjectWorkspace() {
         </div>
       )}
 
+      {brief.integrations.length > 0 && (
+        <div className="brief-section">
+          <h3 className="brief-section-title">Integraciones y herramientas</h3>
+          {renderRequirementList(brief.integrations, "integrations", false)}
+        </div>
+      )}
+
       {brief.indicatorsToAgree && brief.indicatorsToAgree.length > 0 && (
         <div className="brief-section">
           <h3 className="brief-section-title">Indicadores por acordar</h3>
           {renderRequirementList(brief.indicatorsToAgree, "indicatorsToAgree", false)}
+        </div>
+      )}
+
+      {brief.openQuestions.length > 0 && (
+        <div className="brief-section">
+          <h3 className="brief-section-title">Decisiones pendientes</h3>
+          <ul className="brief-req-list">
+            {brief.openQuestions.map((q) => (
+              <li key={q} className="brief-req-item">
+                <div className="brief-req-top">
+                  <span className="brief-req-text">{q}</span>
+                  <span className="status-badge pending">Por definir</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </>
@@ -902,7 +1039,7 @@ export default function ProjectWorkspace() {
 
             {/* Direct Submit Card First or Right Below Brief */}
             <section className="summary-brief-card" aria-label="Ficha editable de proyecto">
-              {renderEditableBriefContent()}
+              {renderEditableBriefContent("main")}
             </section>
 
             <section className="summary-submit-card no-print" aria-label="Enviar proyecto a ENIX Studio">
@@ -968,8 +1105,8 @@ export default function ProjectWorkspace() {
                 {sendState.kind === "unconfigured" && (
                   <div className="send-status-box is-info" role="status">
                     <p style={{ marginBottom: 8 }}>{sendState.message}</p>
-                    <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="btn btn-secondary btn-sm">
-                      Abrir correo con mi resumen
+                    <a href={mailtoPrepared.href} className="btn btn-secondary btn-sm">
+                      {mailtoPrepared.isAbbreviated ? "Abrir correo (resumen breve)" : "Abrir correo con mi resumen"}
                     </a>
                   </div>
                 )}
@@ -980,15 +1117,29 @@ export default function ProjectWorkspace() {
                   </div>
                 )}
 
+                <p style={{ fontSize: "0.75rem", color: "var(--ink-secondary)", lineHeight: 1.5 }}>
+                  Usaremos tus datos únicamente para evaluar y responder esta solicitud de proyecto (no te suscribimos a listas de marketing). Consulta nuestra{" "}
+                  <a href="/privacy/" style={{ color: "var(--accent-deep)", textDecoration: "underline", fontWeight: 600 }}>
+                    política de privacidad y uso de datos
+                  </a>
+                  .
+                </p>
+
+                {mailtoPrepared.isAbbreviated && (
+                  <p style={{ fontSize: "0.74rem", color: "var(--ink-muted)", lineHeight: 1.45 }}>
+                    Nota: como tu ficha es extensa, el enlace «Abrir en correo» prepara un resumen breve para evitar cortes; si eliges correo manual, usa «Copiar íntegra» o descarga <code>.md</code>/<code>.txt</code> para adjuntarla completa.
+                  </p>
+                )}
+
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
                   <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap" }}>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={handleStepBack}>
                       <RotateCcw size={13} aria-hidden="true" />
                       <span>Ajustar respuestas</span>
                     </button>
-                    <a href={buildMailtoHref(brief, siteConfig.contactEmail)} className="ws-link-btn">
+                    <a href={mailtoPrepared.href} className="ws-link-btn">
                       <Mail size={13} aria-hidden="true" />
-                      <span>Abrir en correo</span>
+                      <span>{mailtoPrepared.isAbbreviated ? "Abrir resumen en correo" : "Abrir en correo"}</span>
                     </a>
                   </div>
 
@@ -1025,46 +1176,48 @@ export default function ProjectWorkspace() {
         )}
       </main>
 
-      {/* Optional On-Demand Preview Modal ("Ver avance") */}
-      <dialog
-        ref={previewDialogRef}
-        className="preview-dialog"
-        aria-labelledby="preview-dialog-title"
-        {...({ closedby: "any" } as Record<string, string>)}
-      >
-        <div className="preview-dialog-body">
-          <div className="preview-dialog-head">
-            <h2 id="preview-dialog-title" className="heading-md">
-              Avance de tu ficha
-            </h2>
-            <form method="dialog">
-              <button type="submit" className="mobile-close-btn" aria-label="Cerrar vista previa">
-                <X size={18} aria-hidden="true" />
-              </button>
-            </form>
-          </div>
+      {/* Optional On-Demand Preview Modal ("Ver avance") — only mounted during steps to prevent duplicate IDs (ENX-05) */}
+      {!isSummaryStep && (
+        <dialog
+          ref={previewDialogRef}
+          className="preview-dialog"
+          aria-labelledby="preview-dialog-title"
+          {...({ closedby: "any" } as Record<string, string>)}
+        >
+          <div className="preview-dialog-body">
+            <div className="preview-dialog-head">
+              <h2 id="preview-dialog-title" className="heading-md">
+                Avance de tu ficha
+              </h2>
+              <form method="dialog">
+                <button type="submit" className="mobile-close-btn" aria-label="Cerrar vista previa">
+                  <X size={18} aria-hidden="true" />
+                </button>
+              </form>
+            </div>
 
-          {renderEditableBriefContent()}
+            {renderEditableBriefContent("preview")}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.6rem", paddingTop: "0.5rem" }}>
-            <form method="dialog">
-              <button type="submit" className="btn btn-secondary btn-sm">
-                Seguir respondiendo
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.6rem", paddingTop: "0.5rem" }}>
+              <form method="dialog">
+                <button type="submit" className="btn btn-secondary btn-sm">
+                  Seguir respondiendo
+                </button>
+              </form>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  previewDialogRef.current?.close();
+                  handleJumpToSummary();
+                }}
+              >
+                Ir a enviar ficha →
               </button>
-            </form>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={() => {
-                previewDialogRef.current?.close();
-                handleJumpToSummary();
-              }}
-            >
-              Ir a enviar ficha →
-            </button>
+            </div>
           </div>
-        </div>
-      </dialog>
+        </dialog>
+      )}
     </div>
   );
 }

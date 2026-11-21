@@ -7,6 +7,7 @@ interface Props {
   activeSlug?: DemoSlug;
   compact?: boolean;
   darkSurface?: boolean;
+  hideHeader?: boolean;
 }
 
 const SERVICES = [
@@ -68,7 +69,7 @@ const AUTO_SCENARIOS = [
   }
 ];
 
-export default function InteractiveDemos({ activeSlug, compact = false, darkSurface = false }: Props) {
+export default function InteractiveDemos({ activeSlug, compact = false, darkSurface = false, hideHeader = false }: Props) {
   const [selectedDemo, setSelectedDemo] = useState<DemoSlug>(activeSlug || "bookings");
 
   // Demo 1: Reservas
@@ -169,15 +170,19 @@ export default function InteractiveDemos({ activeSlug, compact = false, darkSurf
             {currentMeta.tag}
           </span>
 
-          <h3 className="heading-md" style={{ color: textMain }}>
-            {currentMeta.title}
-          </h3>
+          {!hideHeader && (
+            <>
+              <h3 className="heading-md" style={{ color: textMain }}>
+                {currentMeta.title}
+              </h3>
 
-          <p style={{ fontSize: "0.95rem", color: textMain, fontWeight: 500, lineHeight: 1.5 }}>
-            {currentMeta.businessNeed}
-          </p>
+              <p style={{ fontSize: "0.95rem", color: textMain, fontWeight: 500, lineHeight: 1.5 }}>
+                {currentMeta.businessNeed}
+              </p>
+            </>
+          )}
 
-          <p style={{ fontSize: "0.88rem", color: textMuted, lineHeight: 1.55 }}>
+          <p style={{ fontSize: "0.9rem", color: textMuted, lineHeight: 1.55 }}>
             {currentMeta.summary}
           </p>
 
@@ -281,7 +286,7 @@ export default function InteractiveDemos({ activeSlug, compact = false, darkSurf
               <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: textMuted }}>
                 2. Disponibilidad de ejemplo
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
                 {Object.keys(SLOTS_BY_DAY).map((d) => (
                   <button
                     key={d}
@@ -291,18 +296,23 @@ export default function InteractiveDemos({ activeSlug, compact = false, darkSurf
                       setSlot(SLOTS_BY_DAY[d][0]);
                       setBookingConfirmed(false);
                     }}
-                    className="brief-mini-btn"
                     style={{
-                      background: day === d ? "#301B3C" : "transparent",
+                      minHeight: 38,
+                      padding: "0.42rem 0.85rem",
+                      borderRadius: 10,
+                      border: `1.5px solid ${day === d ? "#301B3C" : borderCol}`,
+                      background: day === d ? "#301B3C" : darkSurface ? "rgba(255,255,255,0.06)" : "#FFFFFF",
                       color: day === d ? "#FFFFFF" : textMain,
-                      borderColor: day === d ? "#301B3C" : borderCol
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      cursor: "pointer"
                     }}
                   >
                     {d}
                   </button>
                 ))}
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
                 {SLOTS_BY_DAY[day].map((s) => (
                   <button
                     key={s}
@@ -311,11 +321,16 @@ export default function InteractiveDemos({ activeSlug, compact = false, darkSurf
                       setSlot(s);
                       setBookingConfirmed(false);
                     }}
-                    className="brief-mini-btn"
                     style={{
-                      background: slot === s ? "#F34B21" : "transparent",
+                      minHeight: 38,
+                      padding: "0.42rem 0.85rem",
+                      borderRadius: 10,
+                      border: `1.5px solid ${slot === s ? "#F34B21" : borderCol}`,
+                      background: slot === s ? "#F34B21" : darkSurface ? "rgba(255,255,255,0.06)" : "#FFFFFF",
                       color: slot === s ? "#FFFFFF" : textMain,
-                      borderColor: slot === s ? "#F34B21" : borderCol
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      cursor: "pointer"
                     }}
                   >
                     {s}

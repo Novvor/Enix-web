@@ -17,7 +17,7 @@ import { solutions } from "@/content/solutions";
 
     <div class="solutions-bento">
       {solutions.map((item, idx) => (
-        <article class:list={["solution-card", { "is-wide": idx === 0 || idx === 3 }]}>
+        <article class:list={["solution-card", { "is-wide": idx === 0 || idx === 3, "is-half": idx === 4 || idx === 5 }]}>
           <div class="solution-card-visual" aria-hidden="true">
             {item.previewType === "web" && (
               <div class="mini-ui mini-ui-web">
@@ -149,6 +149,10 @@ import { solutions } from "@/content/solutions";
     display: grid;
     grid-template-columns: 1.05fr 1fr;
     align-items: center;
+  }
+
+  .solution-card.is-half {
+    grid-column: span 6;
   }
 
   .solution-card:hover {
@@ -336,8 +340,8 @@ import { solutions } from "@/content/solutions";
   }
 
   .mini-portal-k {
-    font-size: 0.68rem;
-    color: var(--ink-muted);
+    font-size: 0.72rem;
+    color: var(--ink-primary);
     font-weight: 700;
   }
 

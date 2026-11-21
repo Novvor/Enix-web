@@ -91,6 +91,38 @@ const jsonLdNodes = [
         </article>
       </div>
 
+      {service.slug === "brand-design" && (
+        <div class="brand-concept-demo" aria-label="Concepto visual de demostración de sistema de marca">
+          <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:1rem;">
+            <span class="eyebrow" style="background: var(--bg-surface);">
+              <span class="eyebrow-dot" aria-hidden="true"></span>
+              <span>Concepto visual de demostración · Sistema de marca</span>
+            </span>
+            <span style="font-size:0.74rem; color:var(--ink-secondary);">Ejemplo ilustrativo para diferenciar alcances</span>
+          </div>
+          <div class="brand-concept-grid">
+            <div class="brand-concept-card">
+              <strong>Identidad de marca completa</strong>
+              <div class="swatch-row" aria-hidden="true">
+                <span class="swatch" style="background:#301B3C;"></span>
+                <span class="swatch" style="background:#F34B21;"></span>
+                <span class="swatch" style="background:#FFD1B4;"></span>
+                <span class="swatch" style="background:#FAF8F6; border:1px solid rgba(48,27,60,0.18);"></span>
+              </div>
+              <p>Paleta con reglas de contraste, jerarquía tipográfica, usos del logo, tono de mensajes y guía para web y redes.</p>
+            </div>
+            <div class="brand-concept-card is-campaign">
+              <strong>Piezas para campaña puntual</strong>
+              <div class="campaign-mini-ad" aria-hidden="true">
+                <span class="campaign-mini-tag">Anuncio · Demostración</span>
+                <span class="campaign-mini-h">Mensaje claro + oferta + llamado a la acción</span>
+              </div>
+              <p>Creativos adaptados a Google/Meta Ads, banners y soportes comerciales respetando tu marca actual.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div class="srv-related">
         <h2 class="heading-md" style="margin-block-end: 1rem;">Cómo se conecta con el resto de ENIX Studio</h2>
         <div class="srv-related-grid">
@@ -183,9 +215,73 @@ const jsonLdNodes = [
     color: var(--ink-secondary);
   }
 
+  .brand-concept-demo {
+    margin-block-start: 2rem;
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(155deg, #fff5ef 0%, #f5eef6 100%);
+    border: 1px solid rgba(243, 75, 33, 0.2);
+  }
+
+  .brand-concept-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .brand-concept-card {
+    padding: 1.25rem;
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .brand-concept-card p {
+    font-size: var(--text-xs);
+    color: var(--ink-secondary);
+    line-height: 1.55;
+  }
+
+  .swatch-row {
+    display: flex;
+    gap: 0.45rem;
+  }
+
+  .swatch {
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: 10px;
+  }
+
+  .campaign-mini-ad {
+    padding: 0.75rem 0.9rem;
+    border-radius: 12px;
+    background: var(--surface-dark);
+    color: var(--ink-on-dark);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .campaign-mini-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--glow-peach);
+    text-transform: uppercase;
+  }
+
+  .campaign-mini-h {
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
   @media (max-width: 760px) {
     .srv-grid,
-    .srv-related-grid {
+    .srv-related-grid,
+    .brand-concept-grid {
       grid-template-columns: 1fr;
     }
   }

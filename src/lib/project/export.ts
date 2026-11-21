@@ -27,9 +27,11 @@ export function briefToMarkdown(brief: ProjectBrief): string {
   const isMarketingOrCombined = brief.track === "marketing" || brief.track === "combined";
   const essentialReqs = brief.requirements.filter((r) => r.priority === "initial" || r.priority === "undecided");
   const laterReqs = brief.requirements.filter((r) => r.priority === "later");
+  const effectiveTitle = brief.title.trim() || "Proyecto en definición";
+  const effectiveGoal = brief.goal.trim() || brief.commercialGoal?.trim() || brief.idea.trim() || "Por definir";
 
   const lines: string[] = [
-    `# Ficha de proyecto — ${brief.title || "Proyecto sin título"}`,
+    `# Ficha de proyecto — ${effectiveTitle}`,
     "",
     `> Documento de trabajo generado en el Asistente de proyectos ENIX Studio (Revisión #${brief.revision}).`,
     "> Este resumen ordena el alcance inicial; no constituye una propuesta comercial cerrada ni un contrato.",
@@ -38,25 +40,33 @@ export function briefToMarkdown(brief: ProjectBrief): string {
     `- **Enfoque del proyecto:** ${trackLabel}`,
     `- **Tipo de solución / servicio:** ${categoryLabel}`,
     `- **Contexto:** ${audienceLabel}`,
-    `- **Idea inicial:** ${brief.idea || "Por definir"}`,
-    `- **Objetivo principal:** ${brief.goal || "Por definir"}`
+    `- **Idea original:** ${brief.idea || "Por definir"}`,
+    `- **Objetivo principal:** ${effectiveGoal}`
   ];
 
-  if (brief.businessOffer) lines.push(`- **Qué ofrece el negocio:** ${brief.businessOffer}`);
-  if (brief.commercialGoal) lines.push(`- **Objetivo comercial:** ${brief.commercialGoal}`);
+  if (brief.businessOffer && brief.businessOffer !== brief.idea) {
+    lines.push(`- **Qué ofrece el negocio:** ${brief.businessOffer}`);
+  }
+  if (brief.commercialGoal && brief.commercialGoal !== effectiveGoal) {
+    lines.push(`- **Objetivo comercial:** ${brief.commercialGoal}`);
+  }
   if (brief.targetAudienceAndTerritory) {
     lines.push(`- **Público y territorio:** ${brief.targetAudienceAndTerritory}`);
   }
   if (brief.existingChannelsAndAssets) {
-    lines.push(`- **Canales y activos existentes:** ${brief.existingChannelsAndAssets}`);
+    lines.push(`- **Canales y antecedentes declarados:** ${brief.existingChannelsAndAssets}`);
   }
   if (isMarketingOrCombined) {
     lines.push(
       `- **Modalidad de trabajo:** ${MODALITY_LABELS[brief.engagementModality || "undecided"]}`
     );
   }
-  if (brief.currentSituation) lines.push(`- **Situación actual:** ${brief.currentSituation}`);
-  if (brief.expectedOutcome) lines.push(`- **Resultado esperado:** ${brief.expectedOutcome}`);
+  if (brief.currentSituation && brief.currentSituation !== brief.existingChannelsAndAssets) {
+    lines.push(`- **Situación actual:** ${brief.currentSituation}`);
+  }
+  if (brief.expectedOutcome) {
+    lines.push(`- **Resultado esperado:** ${brief.expectedOutcome}`);
+  }
   lines.push("");
 
   if (brief.users.length > 0) {
@@ -104,13 +114,13 @@ export function briefToMarkdown(brief: ProjectBrief): string {
   }
 
   lines.push("## Fechas e inversión declaradas");
-  lines.push(`- **Expectativa de fechas:** ${brief.declaredTimeline || "Por definir"}`);
+  lines.push(`- **Expectativa de lanzamiento / fechas:** ${brief.declaredTimeline || "Por definir"}`);
   if (isMarketingOrCombined) {
     lines.push(
       `- **Inversión publicitaria (anuncios en plataformas):** ${brief.adSpendBudget || "Por definir"}`
     );
     lines.push(
-      `- **Presupuesto de servicios (estrategia, creación y gestión):** ${brief.serviceBudget || brief.declaredBudget || "Por definir"}`
+      `- **Presupuesto de servicios (honorarios ENIX):** ${brief.serviceBudget || brief.declaredBudget || "Por definir"}`
     );
   } else {
     lines.push(`- **Inversión referencial:** ${brief.declaredBudget || "Por definir"}`);
@@ -144,10 +154,61 @@ export function downloadTextFile(filename: string, content: string, mimeType = "
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+const SAFE_MAILTO_BODY_LIMIT = 1400;
+
+export interface MailtoPreparedResult {
+  href: string;
+  isAbbreviated: boolean;
+  bodyText: string;
+}
+
+/**
+ * Prepares a mailto: link without silent mid-sentence truncation (ENX-02).
+ * If the full brief exceeds safe mailto URL limits, prepares a clean structured
+ * summary explicitly noting that the full document should be attached or pasted.
+ */
+export function prepareMailto(brief: ProjectBrief, toEmail = "hello@enix.studio"): MailtoPreparedResult {
+  const effectiveTitle = brief.title.trim() || "Proyecto en definición";
+  const subject = `[ENIX Studio] Ficha de proyecto — ${effectiveTitle}`;
+  const fullText = briefToPlainText(brief);
+
+  if (fullText.length <= SAFE_MAILTO_BODY_LIMIT) {
+    return {
+      href: `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(fullText)}`,
+      isAbbreviated: false,
+      bodyText: fullText
+    };
+  }
+
+  const categoryLabel = brief.category ? CATEGORY_LABELS[brief.category] || brief.category : "Por definir";
+  const isMarketingOrCombined = brief.track === "marketing" || brief.track === "combined";
+  const summaryLines = [
+    `Hola equipo de ENIX Studio,`,
+    "",
+    `Comparto un resumen breve de mi proyecto (la ficha completa supera el límite del enlace de correo; puedes adjuntar el archivo .md/.txt descargado o pegar la ficha completa copiada desde la web).`,
+    "",
+    `- Proyecto: ${effectiveTitle}`,
+    `- Enfoque: ${TRACK_LABELS[brief.track || "development"]} (${categoryLabel})`,
+    `- Objetivo: ${(brief.goal || brief.commercialGoal || brief.idea || "Por definir").slice(0, 260)}`,
+    brief.targetAudienceAndTerritory ? `- Público y territorio: ${brief.targetAudienceAndTerritory.slice(0, 140)}` : "",
+    isMarketingOrCombined ? `- Modalidad: ${MODALITY_LABELS[brief.engagementModality || "undecided"]}` : "",
+    `- Fechas / lanzamiento: ${(brief.declaredTimeline || "Por definir").slice(0, 140)}`,
+    isMarketingOrCombined ? `- Inversión en anuncios: ${(brief.adSpendBudget || "Por definir").slice(0, 120)}` : "",
+    isMarketingOrCombined ? `- Honorarios / servicios: ${(brief.serviceBudget || "Por definir").slice(0, 120)}` : "",
+    "",
+    "Nota: Recuerda adjuntar tu archivo descargado o pegar la ficha completa antes de enviar este correo."
+  ].filter((line, idx, arr) => !(line === "" && arr[idx - 1] === ""));
+
+  const abbreviatedBody = summaryLines.join("\n");
+  return {
+    href: `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(abbreviatedBody)}`,
+    isAbbreviated: true,
+    bodyText: abbreviatedBody
+  };
+}
+
 export function buildMailtoHref(brief: ProjectBrief, toEmail = "hello@enix.studio"): string {
-  const subject = `[ENIX Studio] Ficha de proyecto — ${brief.title || "Nueva consulta"}`;
-  const body = briefToPlainText(brief).slice(0, 1800);
-  return `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return prepareMailto(brief, toEmail).href;
 }
 
 export function buildSlugFilename(title: string, ext: "md" | "txt"): string {

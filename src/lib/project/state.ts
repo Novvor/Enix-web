@@ -92,8 +92,11 @@ export function applyBriefPatch(
     updatedAt: new Date().toISOString()
   };
 
+  const isPlaceholderTitle = (val: string) =>
+    !val.trim() || /^nuevo proyecto digital$/i.test(val.trim()) || /^proyecto de /i.test(val.trim());
+
   if (patch.title !== undefined && patch.title.trim()) {
-    if (canOverwriteScalar("title", brief.title)) {
+    if (isManual || (!manualFields?.has("title") && isPlaceholderTitle(brief.title))) {
       next.title = patch.title.trim().slice(0, 120);
     }
   }

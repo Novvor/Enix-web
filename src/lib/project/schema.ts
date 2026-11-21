@@ -4,7 +4,7 @@ export type RequirementPriority = "initial" | "later" | "undecided";
 export type ProjectStage = "idea" | "needs" | "priorities" | "summary";
 export type ProjectAudience = "entrepreneur" | "business" | "undetermined";
 export type ProjectTrack = "development" | "marketing" | "combined";
-export type EngagementModality = "one-time" | "ongoing" | "undecided";
+export type EngagementModality = "one-time" | "ongoing" | "one-time-then-ongoing" | "undecided";
 
 export interface Requirement {
   id: string;
@@ -140,6 +140,7 @@ export const TRACK_LABELS: Record<ProjectTrack, string> = {
 export const MODALITY_LABELS: Record<EngagementModality, string> = {
   "one-time": "Trabajo puntual",
   ongoing: "Acompañamiento periódico",
+  "one-time-then-ongoing": "Trabajo puntual inicial y evaluación de continuidad",
   undecided: "Por definir"
 };
 

@@ -19,16 +19,13 @@ import { audiencePaths, homeFaqs, processStages, siteConfig } from "@/content/si
   <!-- 2. Lo que tienes en mente puede tomar muchas formas -->
   <SolutionsShowcase />
 
-  <!-- 2b. Marketing digital y marca -->
-  <MarketingShowcase />
-
-  <!-- 3. Mira lo que podríamos construir (Sección oscura) -->
+  <!-- 3. Mira lo que podríamos construir (Sección oscura — adelantada antes de marketing para mostrar prueba interactiva antes, ENX-09) -->
   <section class="section section-dark">
     <div class="container">
       <div class="dark-section-head">
         <div class="eyebrow eyebrow-dark">
           <span class="eyebrow-dot" aria-hidden="true"></span>
-          <span>Demostraciones probables · Datos de ejemplo</span>
+          <span>Demostraciones interactivas · Datos de ejemplo</span>
         </div>
         <h2 class="heading-lg">Mira lo que podríamos construir</h2>
         <p class="lead">
@@ -39,6 +36,9 @@ import { audiencePaths, homeFaqs, processStages, siteConfig } from "@/content/si
       <InteractiveDemos client:visible compact={true} darkSurface={true} />
     </div>
   </section>
+
+  <!-- 4. Marketing digital y marca -->
+  <MarketingShowcase />
 
   <!-- 4. De tu idea a un alcance claro -->
   <BriefBridgeSection />
@@ -115,37 +115,37 @@ import { audiencePaths, homeFaqs, processStages, siteConfig } from "@/content/si
     </div>
   </section>
 
-  <!-- 7. Trabajo y evidencia honesta -->
+  <!-- 7. Un proyecto claro desde el primer paso (ENX-06) -->
   <section class="section evidence-section">
     <div class="container">
       <div class="evidence-panel">
         <div class="evidence-copy">
           <div class="eyebrow">
             <span class="eyebrow-dot" aria-hidden="true"></span>
-            <span>Transparencia antes que promesas</span>
+            <span>Forma de trabajar</span>
           </div>
-          <h2 class="heading-lg">Preferimos mostrarte cómo resolvemos antes que inventar cifras</h2>
+          <h2 class="heading-lg">Un proyecto claro desde el primer paso.</h2>
           <p class="lead">
-            En lugar de atribuir métricas genéricas a logos de adorno, te mostramos interfaces reales que puedes probar hoy y un asistente que ordena tu proyecto sin costo inicial.
+            Definimos contigo el alcance, los entregables y la forma de trabajar. Durante el proyecto, revisamos avances y acordamos las decisiones que siguen.
           </p>
           <div class="evidence-actions">
-            <a href="/demos/" class="btn btn-primary">Explorar demostraciones</a>
+            <a href="/create-project/" class="btn btn-primary">Definir mi proyecto →</a>
             <a href="/studio/" class="btn btn-secondary">Conocer ENIX Studio</a>
           </div>
         </div>
 
         <div class="evidence-pillars">
           <div class="evidence-pillar">
-            <strong>Alcance editable</strong>
-            <p>Tu ficha distingue lo confirmado de lo sugerido para evitar sorpresas al cotizar.</p>
+            <strong>Alcance y entregables visibles</strong>
+            <p>Tu ficha distingue lo confirmado de las sugerencias opcionales para cotizar y priorizar sin sorpresas.</p>
           </div>
           <div class="evidence-pillar">
-            <strong>Equipo real</strong>
-            <p>{siteConfig.responsibilityStatement}</p>
+            <strong>Dirección de proyectos directa</strong>
+            <p>Interlocución clara desde la evaluación inicial hasta la publicación, con respaldo de {siteConfig.legalParent} en {siteConfig.contactEmail}.</p>
           </div>
           <div class="evidence-pillar">
             <strong>Base propia y documentada</strong>
-            <p>Entregamos código limpio y criterios claros para que tu proyecto pueda evolucionar.</p>
+            <p>Tu empresa mantiene sus dominios, cuentas y código limpio para operar o escalar en futuras etapas.</p>
           </div>
         </div>
       </div>
