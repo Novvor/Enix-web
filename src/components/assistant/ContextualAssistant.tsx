@@ -4,6 +4,7 @@ import { getPageContext, normalizePageId } from "@/lib/project/catalog";
 import { ENIXMascot, ENIX_MOOD, type ENIXMood } from "@/components/mascot/ENIXMascot";
 import { EnixMascotAnimatedSvg } from "@/components/mascot/EnixMascotAnimatedSvg";
 import QuickReplyPanel from "./QuickReplyPanel";
+import InlineContactCard from "./InlineContactCard";
 import {
   ASSISTANT_OPEN_EVENT,
   CHAT_ACTIVE_EVENT,
@@ -448,18 +449,33 @@ export default function ContextualAssistant({
                 </div>
               ))}
 
-              {!isSending && (() => {
+              {!isSending && draft && (() => {
                 const latestAst = [...messages].reverse().find((m) => m.role === "assistant");
-                if (!latestAst?.options?.length) return null;
+                const showContactCard =
+                  (latestAst?.offerContact || draft.leadCapture?.status === "submitted") &&
+                  draft.leadCapture?.status !== "declined";
                 return (
-                  <QuickReplyPanel
-                    messageId={latestAst.id}
-                    options={latestAst.options}
-                    selectionMode={latestAst.selectionMode}
-                    disabled={isSending}
-                    onSelectValue={(val) => void handleSend(val, true)}
-                    onRequestOther={() => textareaRef.current?.focus()}
-                  />
+                  <>
+                    {showContactCard && (
+                      <InlineContactCard
+                        draft={draft}
+                        sourcePage={safePageId}
+                        prefilledEmail={latestAst?.detectedEmail}
+                        onDraftUpdated={(updated) => setDraft(updated)}
+                        onContinueChat={() => textareaRef.current?.focus()}
+                      />
+                    )}
+                    {latestAst?.options?.length ? (
+                      <QuickReplyPanel
+                        messageId={latestAst.id}
+                        options={latestAst.options}
+                        selectionMode={latestAst.selectionMode}
+                        disabled={isSending}
+                        onSelectValue={(val) => void handleSend(val, true)}
+                        onRequestOther={() => textareaRef.current?.focus()}
+                      />
+                    ) : null}
+                  </>
                 );
               })()}
 

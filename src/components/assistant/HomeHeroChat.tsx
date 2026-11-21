@@ -4,6 +4,7 @@ import { heroExampleChips, siteConfig } from "@/content/site";
 import { ENIXMascot, ENIX_MOOD, type ENIXMood } from "@/components/mascot/ENIXMascot";
 import { EnixMascotAnimatedSvg } from "@/components/mascot/EnixMascotAnimatedSvg";
 import QuickReplyPanel from "./QuickReplyPanel";
+import InlineContactCard from "./InlineContactCard";
 import {
   ASSISTANT_OPEN_EVENT,
   clearProjectDraft,
@@ -380,6 +381,16 @@ export default function HomeHeroChat({ hasRiveAsset = false }: HomeHeroChatProps
               </div>
             )}
           </div>
+        )}
+
+        {hasConversation && draft && !isSending && (latestAssistant?.offerContact || draft.leadCapture?.status === "submitted") && draft.leadCapture?.status !== "declined" && (
+          <InlineContactCard
+            draft={draft}
+            sourcePage="/"
+            prefilledEmail={latestAssistant?.detectedEmail}
+            onDraftUpdated={(updated) => setDraft(updated)}
+            onContinueChat={() => textareaRef.current?.focus()}
+          />
         )}
 
         {hasConversation && latestAssistant?.options && latestAssistant.options.length > 0 && !isSending && (

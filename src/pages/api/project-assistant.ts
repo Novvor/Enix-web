@@ -6,7 +6,7 @@ import {
   type ProviderInvoker
 } from "@/lib/server/assistant-guard";
 import { resolveRuntimeCoordinator } from "@/lib/server/production-store";
-import type { CommercialStage, ProjectBrief } from "@/lib/project/schema";
+import type { CommercialStage, LeadCaptureState, ProjectBrief } from "@/lib/project/schema";
 
 export const prerender = false;
 
@@ -189,6 +189,7 @@ export const POST: APIRoute = async ({ request }) => {
       conversationMode?: "commercial" | "legacy-guided";
       history?: Array<{ role: "user" | "assistant"; text: string }>;
       currentCommercialStage?: CommercialStage;
+      leadCapture?: LeadCaptureState;
     } | null;
 
     const rawText = typeof body?.message === "string" ? body.message : body?.answer;
@@ -240,6 +241,7 @@ export const POST: APIRoute = async ({ request }) => {
       conversationMode: body.conversationMode || "commercial",
       history: safeHistory,
       currentCommercialStage: body.currentCommercialStage,
+      leadCapture: body.leadCapture,
       aiEnabled,
       isProduction: storeResolution.isProduction,
       providerName,

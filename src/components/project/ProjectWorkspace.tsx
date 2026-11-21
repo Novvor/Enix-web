@@ -27,14 +27,18 @@ import {
   TRACK_LABELS,
   computeBriefReadiness,
   createEmptyBrief,
+  createInitialLeadCapture,
   normalizeBrief,
+  normalizeLeadCapture,
   type ChatMessage,
   type CommercialStage,
   type EngagementModality,
+  type LeadCaptureState,
   type ProjectBrief,
   type ProjectDraft
 } from "@/lib/project/schema";
 import QuickReplyPanel from "@/components/assistant/QuickReplyPanel";
+import InlineContactCard from "@/components/assistant/InlineContactCard";
 import "@/components/assistant/assistant.css";
 import {
   addManualRequirement,
@@ -107,6 +111,7 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
   const [brief, setBrief] = useState<ProjectBrief>(() => createEmptyBrief());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [manualFields, setManualFields] = useState<string[]>([]);
+  const [leadCapture, setLeadCapture] = useState<LeadCaptureState>(() => createInitialLeadCapture());
   const [incompatibleRaw, setIncompatibleRaw] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -164,6 +169,9 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
       setBrief(normalizeBrief(draft.brief));
       setMessages(draft.messages || []);
       setManualFields(draft.manualFields || []);
+      const hydratedLead = normalizeLeadCapture(draft.leadCapture);
+      setLeadCapture(hydratedLead);
+      if (hydratedLead.capturedEmail) setContactEmail(hydratedLead.capturedEmail);
       if (draft.unsentText) setInputText(draft.unsentText);
     } else if (starter && starter.idea) {
       const cat = starter.category || urlCategory;
@@ -221,9 +229,10 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
       answers: {},
       unsentText: inputText,
       lastPageId: "/create-project/",
-      manualFields
+      manualFields,
+      leadCapture
     });
-  }, [hydrated, brief, messages, inputText, manualFields]);
+  }, [hydrated, brief, messages, inputText, manualFields, leadCapture]);
 
   useEffect(() => {
     const el = threadRef.current;
@@ -288,7 +297,8 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
       answers: {},
       unsentText: clean,
       lastPageId: "/create-project/",
-      manualFields
+      manualFields,
+      leadCapture
     };
 
     try {
@@ -307,6 +317,9 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
       } else {
         setBrief(result.draft.brief);
         setMessages(result.draft.messages);
+        const nextLead = normalizeLeadCapture(result.draft.leadCapture);
+        setLeadCapture(nextLead);
+        if (nextLead.capturedEmail && !contactEmail) setContactEmail(nextLead.capturedEmail);
         setAssistantMode(result.response.mode);
       }
     } finally {
@@ -727,6 +740,35 @@ export default function ProjectWorkspace({ hasRiveAsset = false }: ProjectWorksp
                 </div>
               )}
             </div>
+
+            {!isSending && (latestAssistant?.offerContact || leadCapture.status === "submitted") && leadCapture.status !== "declined" && (
+              <div style={{ padding: "0 1.25rem 0.5rem" }}>
+                <InlineContactCard
+                  draft={{
+                    schemaVersion: 1,
+                    savedAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 14 * 86400_000).toISOString(),
+                    stage: brief.requirements.length > 1 ? "priorities" : "needs",
+                    currentStepIndex: 0,
+                    brief,
+                    messages,
+                    answers: {},
+                    unsentText: inputText,
+                    lastPageId: "/create-project/",
+                    manualFields,
+                    leadCapture
+                  }}
+                  sourcePage="/create-project/"
+                  prefilledEmail={latestAssistant?.detectedEmail}
+                  onDraftUpdated={(updated) => {
+                    const nextLead = normalizeLeadCapture(updated.leadCapture);
+                    setLeadCapture(nextLead);
+                    if (nextLead.capturedEmail) setContactEmail(nextLead.capturedEmail);
+                  }}
+                  onContinueChat={() => inputRef.current?.focus()}
+                />
+              </div>
+            )}
 
             {latestAssistant?.options && latestAssistant.options.length > 0 && !isSending && (
               <div className="ws-quick-bar">

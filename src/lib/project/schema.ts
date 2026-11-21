@@ -10,6 +10,41 @@ export type CommercialStage =
   | "summary"
   | "evaluation";
 export type SelectionMode = "single" | "multi";
+export type ContactCaptureStatus = "idle" | "offered" | "declined" | "submitted";
+
+export interface LeadCaptureState {
+  discoveryQuestionsAsked: number;
+  status: ContactCaptureStatus;
+  capturedEmail: string | null;
+  referenceId: string | null;
+  submittedAt: string | null;
+}
+
+export function createInitialLeadCapture(): LeadCaptureState {
+  return {
+    discoveryQuestionsAsked: 0,
+    status: "idle",
+    capturedEmail: null,
+    referenceId: null,
+    submittedAt: null
+  };
+}
+
+export function normalizeLeadCapture(raw?: Partial<LeadCaptureState> | null): LeadCaptureState {
+  const validStatuses = new Set<ContactCaptureStatus>(["idle", "offered", "declined", "submitted"]);
+  const status = raw?.status && validStatuses.has(raw.status) ? raw.status : "idle";
+  return {
+    discoveryQuestionsAsked:
+      typeof raw?.discoveryQuestionsAsked === "number" && raw.discoveryQuestionsAsked >= 0
+        ? Math.min(20, Math.floor(raw.discoveryQuestionsAsked))
+        : 0,
+    status,
+    capturedEmail: typeof raw?.capturedEmail === "string" && raw.capturedEmail.trim() ? raw.capturedEmail.trim() : null,
+    referenceId: typeof raw?.referenceId === "string" && raw.referenceId.trim() ? raw.referenceId.trim() : null,
+    submittedAt: typeof raw?.submittedAt === "string" ? raw.submittedAt : null
+  };
+}
+
 export type ProjectAudience = "entrepreneur" | "business" | "undetermined";
 export type ProjectTrack = "development" | "marketing" | "combined";
 export type EngagementModality = "one-time" | "ongoing" | "one-time-then-ongoing" | "undecided";
@@ -77,6 +112,8 @@ export interface ChatMessage {
   options?: ChatOption[];
   selectionMode?: SelectionMode;
   blueprintHighlights?: string[];
+  offerContact?: boolean;
+  detectedEmail?: string | null;
   links?: ChatLink[];
   mode?: "ai" | "guided";
   requestId?: string;
@@ -122,6 +159,10 @@ export interface AssistantTurnResponse {
   options: ChatOption[];
   selectionMode?: SelectionMode;
   blueprintHighlights?: string[];
+  offerContact?: boolean;
+  detectedEmail?: string | null;
+  contactDeclined?: boolean;
+  askedDiscoveryQuestion?: boolean;
   links?: ChatLink[];
   patch: BriefPatch;
   requestId?: string;
@@ -142,6 +183,7 @@ export interface ProjectDraft {
   lastPageId?: string;
   manualFields?: string[];
   pendingRequestId?: string | null;
+  leadCapture?: LeadCaptureState;
 }
 
 export interface BriefReadiness {

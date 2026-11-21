@@ -152,8 +152,8 @@ test("Conversación multi-turno CRM (4 turnos): usa contexto acumulado, no repit
     `Debe avanzar a summary/evaluation, obtuvo: ${t4.commercialStage}`
   );
   assert.ok(
-    t4.options.some((o) => o.value === "__open_submit__"),
-    "Debe invitar suavemente a solicitar evaluación con ENIX"
+    t4.offerContact === true || t4.options.some((o) => o.value === "__open_submit__"),
+    "Debe facilitar la solicitud de contacto o evaluación con ENIX"
   );
 });
 

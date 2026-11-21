@@ -984,3 +984,118 @@
   font-size: 0.7rem;
   font-weight: 700;
 }
+
+/* ------------------------------------------------------------------
+   InlineContactCard (Compact in-chat lead capture — email only)
+   ------------------------------------------------------------------ */
+.inline-contact-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-block-start: 0.45rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: linear-gradient(155deg, #fff8f4 0%, #ffffff 100%);
+  border: 1.5px solid rgba(243, 75, 33, 0.28);
+  box-shadow: 0 12px 28px -16px rgba(48, 27, 60, 0.2);
+}
+
+.inline-contact-card.is-confirmed {
+  background: var(--status-confirmed-bg);
+  border-color: var(--status-confirmed-border);
+  color: var(--status-confirmed-ink);
+}
+
+.inline-contact-ok {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: var(--text-xs);
+  line-height: 1.48;
+}
+
+.inline-contact-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+  line-height: 1.4;
+}
+
+.inline-contact-head svg {
+  color: var(--accent-orange);
+  flex-shrink: 0;
+  margin-block-start: 2px;
+}
+
+.inline-contact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: stretch;
+}
+
+.inline-contact-input {
+  flex: 1 1 200px;
+  min-inline-size: 0;
+  min-block-size: 40px;
+  padding: 0.45rem 0.8rem;
+  border-radius: 11px;
+  border: 1px solid var(--border-strong);
+  background: #ffffff;
+  font-size: 0.9rem;
+  color: var(--ink-primary);
+}
+
+.inline-contact-input:focus-visible {
+  outline: 2px solid rgba(243, 75, 33, 0.35);
+  border-color: var(--accent-orange);
+}
+
+.inline-contact-submit {
+  min-block-size: 40px;
+  white-space: nowrap;
+}
+
+.inline-contact-error {
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: #fff1eb;
+  border: 1px solid rgba(185, 47, 14, 0.25);
+  color: var(--accent-deep);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.inline-contact-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.inline-contact-note {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--ink-muted);
+  flex: 1 1 220px;
+}
+
+.inline-contact-skip {
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.inline-contact-skip:hover {
+  color: var(--ink-primary);
+}

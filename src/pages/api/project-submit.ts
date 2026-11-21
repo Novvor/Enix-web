@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { briefToPlainText } from "@/lib/project/export";
-import type { ProjectBrief } from "@/lib/project/schema";
+import { computeBriefReadiness, type ProjectBrief } from "@/lib/project/schema";
 import { getRedisClient } from "@/lib/redis";
 import { siteConfig } from "@/content/site";
 
@@ -140,6 +140,8 @@ export const POST: APIRoute = async ({ request }) => {
       notes?: string;
       honeypot?: string;
       idempotencyKey?: string;
+      quickContact?: boolean;
+      sourcePage?: string;
       brief?: ProjectBrief;
       contact?: { name?: string; email?: string; company?: string; role?: string; phone?: string };
     } | null;
@@ -152,15 +154,18 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: false, code: "spam_detected", message: "No pudimos procesar la solicitud." }, 400);
     }
 
-    const name = sanitize(body.name ?? body.contact?.name, 140);
+    const isQuickContact = Boolean(body.quickContact);
+    const rawName = sanitize(body.name ?? body.contact?.name, 140);
+    const name = rawName || (isQuickContact ? "Visitante web" : "");
     const email = sanitize(body.email ?? body.contact?.email, 180);
     const company = sanitize(body.company ?? body.contact?.company, 140);
     const role = sanitize(body.role ?? body.contact?.role, 120);
     const phone = sanitize(body.phone ?? body.contact?.phone, 60);
     const notes = sanitize(body.notes, 2000);
+    const sourcePage = sanitize(body.sourcePage, 120);
     const idempotencyKey = sanitize(body.idempotencyKey, 80);
 
-    if (!name || name.length < 2) {
+    if (!isQuickContact && (!name || name.length < 2)) {
       return json({ ok: false, code: "invalid_name", message: "Ingresa tu nombre." }, 400);
     }
 
@@ -205,14 +210,21 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const referenceId = `ENIX-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const summaryText = body.brief ? briefToPlainText(body.brief) : notes;
+    const readiness = body.brief ? computeBriefReadiness(body.brief) : null;
+    const baseSummary = body.brief ? briefToPlainText(body.brief) : notes;
+    const pendingSection =
+      readiness && readiness.toClarify.length > 0
+        ? `\n\n--- Información pendiente por aclarar con el cliente ---\n- ${readiness.toClarify.join("\n- ")}`
+        : "";
+    const summaryText = `${baseSummary}${pendingSection}`.trim() || "Solicitud rápida desde el chat (sin ficha ampliada aún).";
 
     const internalHtml = `
       <div style="font-family:Inter,Arial,sans-serif;background:#FAF8F6;padding:24px;color:#301B3C;">
         <div style="max-width:640px;margin:0 auto;background:#FFFFFF;border:1px solid rgba(48,27,60,0.12);border-radius:16px;padding:28px;">
-          <p style="font-size:12px;color:#B92F0E;font-weight:700;text-transform:uppercase;margin:0 0 8px;">Referencia ${escapeHtml(referenceId)}</p>
-          <h1 style="font-size:22px;margin:0 0 16px;">Nueva ficha de proyecto — ${escapeHtml(name)}</h1>
+          <p style="font-size:12px;color:#B92F0E;font-weight:700;text-transform:uppercase;margin:0 0 8px;">Referencia ${escapeHtml(referenceId)}${isQuickContact ? " · Contacto rápido desde Steve" : ""}</p>
+          <h1 style="font-size:22px;margin:0 0 16px;">${isQuickContact ? "Solicitud de contacto rápido" : "Nueva ficha de proyecto"} — ${escapeHtml(name)}</h1>
           <p style="margin:4px 0;"><strong>Correo:</strong> ${escapeHtml(email)}</p>
+          ${sourcePage ? `<p style="margin:4px 0;"><strong>Página de origen:</strong> ${escapeHtml(sourcePage)}</p>` : ""}
           ${company ? `<p style="margin:4px 0;"><strong>Empresa:</strong> ${escapeHtml(company)}</p>` : ""}
           ${role ? `<p style="margin:4px 0;"><strong>Cargo:</strong> ${escapeHtml(role)}</p>` : ""}
           ${phone ? `<p style="margin:4px 0;"><strong>Teléfono:</strong> ${escapeHtml(phone)}</p>` : ""}
