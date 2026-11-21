@@ -268,7 +268,8 @@ export default function ProjectWorkspace() {
             brief,
             stepId,
             answer: clean,
-            isSelection
+            isSelection,
+            turnCount: messages.filter((m) => m.role === "user").length
           })
         });
         if (res.ok) {

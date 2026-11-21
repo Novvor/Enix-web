@@ -60,6 +60,15 @@ const DEV_REGEX =
 const MKT_REGEX =
   /(marketing|publicidad|campa[nñ]a|anuncios|google ads|meta ads|facebook|instagram|redes sociales|\bseo\b|posicionamiento|b[uú]squedas locales|atraer m[aá]s clientes|conseguir m[aá]s clientes|captar clientes|conseguir m[aá]s reservas|conseguir reservas|estrategia digital|branding|dise[nñ]o de marca|mejorar mi marca|identidad de marca|email marketing|conversi[oó]n|contenido editorial)/i;
 
+const OFF_TOPIC_OR_INJECTION_REGEX =
+  /(ignora (todas )?las instrucciones|ignore previous instructions|act[uú]a como|system prompt|dame una receta|receta de cocina|escribe un poema|hazme la tarea|traduce este texto|resuelve esta ecuaci[oó]n|cu[aá]ntos habitantes|qui[eé]n gan[oó] el mundial|chiste sobre|jailbreak|dan mode|escribe c[oó]digo python para)/i;
+
+export function isOffTopicOrAbuse(text: string): boolean {
+  const clean = text.trim();
+  if (!clean) return false;
+  return OFF_TOPIC_OR_INJECTION_REGEX.test(clean);
+}
+
 export function inferTrackFromInput(idea: string, category: string | null): ProjectTrack {
   if (category === "combined") return "combined";
   const text = idea.trim();
@@ -590,6 +599,22 @@ export function processGuidedAnswer(
   const origin = isSelection ? "selection" : "user";
   const isUnknown = answer === "__unknown__" || /^(todav[ií]a no lo s[eé]|por definir)$/i.test(answer);
   const isSkip = answer === "__skip__" || /^omitir/i.test(answer);
+
+  // Scope guard: keep conversation focused strictly on ENIX Studio projects & services
+  if (!isSelection && isOffTopicOrAbuse(answer)) {
+    const currentQ = getQuestionForStep(stepId, brief);
+    return {
+      mode: "guided",
+      expectedRevision: brief.revision,
+      interpretation:
+        "Estoy aquí exclusivamente para ayudarte a definir proyectos con ENIX Studio (sitios web, aplicaciones, sistemas, automatizaciones, IA, marca y marketing digital). No puedo responder temas ajenos a eso.",
+      question: currentQ.question,
+      stage: currentQ.stage,
+      stepId,
+      options: currentQ.options,
+      patch: {}
+    };
+  }
 
   const patch: BriefPatch = {};
   let interpretation = "Anotado en tu ficha.";
